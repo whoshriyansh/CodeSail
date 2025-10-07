@@ -9,15 +9,29 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onView:codesailView"
+  ],
   "main": "./out/extension.js",
   "contributes": {
-    "commands": [
-      {
-        "command": "codesail.helloWorld",
-        "title": "Hello World"
-      }
-    ]
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codesailSidebar",
+          "title": "CodeSail",
+          "icon": "./src/icons/CodeSail.svg"
+        }
+      ]
+    },
+    "views": {
+      "codesailSidebar": [
+        {
+          "id": "codesailView",
+          "name": "CodeSail View",
+          "type": "webview"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
@@ -25,7 +39,8 @@
     "watch": "tsc -watch -p ./",
     "pretest": "pnpm run compile && pnpm run lint",
     "lint": "eslint src",
-    "test": "vscode-test"
+    "test": "vscode-test",
+    "build-webview": "cd webview-ui && npm run build"
   },
   "devDependencies": {
     "@types/vscode": "^1.104.0",
