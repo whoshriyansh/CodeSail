@@ -18,3 +18,16 @@ TypeScript
     }----
 
 how to connect react webview to vs code api?
+
+how to connect web view of react to vs code exention backend
+
+how to get vscode api for post message in a react web view pannel in vs code extenison ?
+
+How to reciver message sent by react web view pannel in vs code extension.ts
+
+how to make a fucntion and call api in vs code extenion on recieving a message from webview pannel
+
+How to get response from extenion in web view pannel in react
+`https://medium.com/@ashleyluu87/data-flow-from-vs-code-extension-webview-panel-react-components-2f94b881467e`
+
+how to import acquire VsCode Api in react webview pannel

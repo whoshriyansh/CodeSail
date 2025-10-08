@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 body,
 html {
   margin: 0;
@@ -10,81 +12,27 @@ html {
   overflow: hidden;
 }
 
-.container {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  padding: 16px;
-  overflow-y: auto;
-}
-
-.header {
-  text-align: center;
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-bottom: 4px;
-  animation: fadeIn 0.5s ease-in;
-}
-
 .subheader {
-  text-align: center;
-  font-size: 0.9rem;
   color: var(--vscode-descriptionForeground);
-  margin-bottom: 16px;
-}
-
-.sections {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  margin-bottom: 16px;
 }
 
 .section {
-  flex: 1;
   background-color: var(--vscode-sideBarSectionHeader-background);
   border: 1px solid var(--vscode-sideBar-border);
-  border-radius: 8px;
-  padding: 12px;
   box-shadow: var(--vscode-widget-shadow);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.section:hover {
-  transform: scale(1.02);
-  box-shadow: 0 4px 8px var(--vscode-widget-shadow);
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 500;
 }
 
 .section p {
-  font-size: 0.85rem;
   color: var(--vscode-descriptionForeground);
-  margin-top: 4px;
 }
 
 .input-container {
-  display: flex;
-  align-items: center;
-  gap: 8px;
   background-color: var(--vscode-input-background);
   border: 1px solid var(--vscode-input-border);
-  border-radius: 8px;
-  padding: 8px;
-  margin-top: auto; /* Push to bottom */
 }
 
 .input-container input {
-  flex: 1;
-  background: transparent;
-  border: none;
   color: var(--vscode-input-foreground);
-  outline: none;
   &::placeholder {
     color: var(--vscode-input-placeholderForeground);
   }
@@ -93,25 +41,10 @@ html {
 .input-container button {
   background-color: var(--vscode-button-background);
   color: var(--vscode-button-foreground);
-  border: none;
-  padding: 6px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.input-container button:hover {
-  background-color: var(--vscode-button-hoverBackground);
 }
 
 .footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 0;
   border-top: 1px solid var(--vscode-sideBar-border);
-  font-size: 0.85rem;
-  margin-bottom: 20px;
 }
 
 .profile {
@@ -159,4 +92,54 @@ html {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* New component styles */
+.button {
+  border: 1px solid var(--vscode-button-border);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+
+.button:hover {
+  transform: scale(1.05);
+}
+
+.input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.select {
+  border: 1px solid var(--vscode-input-border);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.375rem;
+}
+
+.card {
+  border: 1px dashed var(--vscode-sideBar-border);
+  padding: 1.25rem;
+  border-radius: 0.375rem;
+  transition: transform 0.3s;
+}
+
+.card:hover {
+  transform: scale(1.05);
+}
+
+.card-heading {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-weight: 500;
+}
+
+.card-description {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 400;
 }

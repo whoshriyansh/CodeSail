@@ -48,6 +48,7 @@ export class ViewProvider implements vscode.WebviewViewProvider {
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {
+    //Here we are joining path for the index.js file of our react application
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(
         this._extensionUri,
@@ -57,6 +58,8 @@ export class ViewProvider implements vscode.WebviewViewProvider {
         "index.js"
       )
     );
+
+    //Here we are Joining path for our css file which is in accoridng to vs code styling
     const styleUri = webview.asWebviewUri(
       vscode.Uri.joinPath(
         this._extensionUri,
@@ -67,6 +70,8 @@ export class ViewProvider implements vscode.WebviewViewProvider {
       )
     );
 
+    //Here we are creating a html file as it should be the root to render in a web view pannel so we are giving our js file and style file
+    //Remember only 1 html file get's deployed in 1 web view.
     const cspSource = `default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};`;
     return `<!DOCTYPE html>
       <html lang="en">
