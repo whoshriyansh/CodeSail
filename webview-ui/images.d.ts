@@ -6,3 +6,9 @@ declare module "*.svg" {
   const src: string;
   export default src;
 }
+
+declare const acquireVsCodeApi: () => {
+  postMessage(message: any): void;
+  getState(): any;
+  setState(state: any): void;
+};

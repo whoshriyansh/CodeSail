@@ -4,6 +4,8 @@ import * as path from "path";
 export class ViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewId = "codesailView";
 
+  private _webview?: vscode.Webview; // Store for sending messages back
+
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
   public resolveWebviewView(
@@ -11,16 +13,41 @@ export class ViewProvider implements vscode.WebviewViewProvider {
     context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
   ) {
+    this._webview = webviewView.webview; // Save reference
+
     webviewView.webview.options = {
       enableScripts: true,
-      localResourceRoots: [this._extensionUri], // Allow access to built files
+      localResourceRoots: [this._extensionUri],
     };
 
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
+
+    // using onDidReceiveMessage api for getting command and featching data from the react view pannel
+    webviewView.webview.onDidReceiveMessage(async (message) => {
+      console.log("Extension received message:", message);
+
+      //If statement for featching data for the specific command
+      //TODO: Use switch statement here
+      if (message.command === "fetchdata") {
+        try {
+          const response = await fetch(message.url, { method: message.method });
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+          const data = await response.json();
+          this._webview?.postMessage({ command: "apiResponse", data });
+        } catch (error) {
+          console.error("Fetch error:", error);
+          this._webview?.postMessage({
+            command: "error",
+            text: (error as Error).message,
+          });
+        }
+      }
+    });
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {
-    // Paths to built React files (adjust if using Parcel: change 'build' to 'dist')
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(
         this._extensionUri,
@@ -40,9 +67,7 @@ export class ViewProvider implements vscode.WebviewViewProvider {
       )
     );
 
-    // Basic CSP for security (expand as needed)
     const cspSource = `default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};`;
-
     return `<!DOCTYPE html>
       <html lang="en">
       <head>

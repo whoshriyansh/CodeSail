@@ -9,5 +9,3 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerWebviewViewProvider(ViewProvider.viewId, provider)
   );
 }
-
-export function deactivate() {}
