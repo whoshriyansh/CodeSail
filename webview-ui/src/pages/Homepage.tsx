@@ -1,9 +1,16 @@
 import { useState, useEffect, useRef } from "react";
-import { Eye, Plus, User, RefreshCw } from "lucide-react";
-import { Card, CardHeading } from "../components/ui/card/Card";
+import {
+  Plus,
+  User,
+  RefreshCw,
+  File as DefaultFileIcon,
+  FileText,
+  Image,
+  Code,
+} from "lucide-react";
 import Button from "../components/ui/button/Button";
 import { FormButton, Input } from "../components/ui/formFields/FormFields";
-import { type MenuItem, type Quote } from "../types/Homepage";
+import { type FilePath, type MenuItem } from "../types/Homepage";
 import MenuCard from "../components/HomePage/MenuCard";
 
 const initialMenuItems: MenuItem[] = [
@@ -36,13 +43,40 @@ const initialMenuItems: MenuItem[] = [
   },
 ];
 
+// ✅ Extension-icon mapping (extend as needed)
+const getFileIcon = (ext: string) => {
+  switch (ext) {
+    case "ts":
+    case "js":
+    case "tsx":
+    case "jsx":
+      return <Code size={14} />;
+    case "json":
+    case "md":
+    case "txt":
+      return <FileText size={14} />;
+    case "png":
+    case "jpg":
+    case "jpeg":
+    case "svg":
+      return <Image size={14} />;
+    default:
+      return <DefaultFileIcon size={14} />;
+  }
+};
+
 const Homepage = () => {
   const [input, setInput] = useState("");
-  const [showFiles, setShowFiles] = useState<Quote[]>([]);
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
-  const [selectedMenu, setSelectedMenu] = useState<number | null>(null); // Track selected menu ID
-  const vscodeRef = useRef<any>(null);
+  const [selectedMenu, setSelectedMenu] = useState<number | null>(null);
+  const [fileModalOpen, setFileModalOpen] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(15); // How many files to show at a time
 
+  const vscodeRef = useRef<any>(null);
+  const allFilesRef = useRef<FilePath[]>([]);
+  const [displayedFiles, setDisplayedFiles] = useState<FilePath[]>([]);
+
+  // Fetch VSCode API and initial data
   useEffect(() => {
     try {
       const vscode = acquireVsCodeApi();
@@ -52,23 +86,19 @@ const Homepage = () => {
       console.error("Failed to acquire VS Code API:", e);
     }
 
+    sendMessageToExtension(); // initial fetch
+
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
       console.log("Frontend received message:", message);
 
       switch (message.command) {
-        case "apiResponse":
-          if (message.data && Array.isArray(message.data.quotes)) {
-            console.log("Setting quotes:", message.data.quotes);
-            setShowFiles(message.data.quotes);
-          } else {
-            console.warn(
-              "Invalid data format, expected quotes array:",
-              message.data
-            );
-            setShowFiles([]);
-          }
+        case "all-files": {
+          allFilesRef.current = message.data;
+          setDisplayedFiles(message.data.slice(0, 15));
+          setVisibleCount(15);
           break;
+        }
         case "error":
           console.error("Error from extension:", message.text);
           alert(`Error: ${message.text}`);
@@ -80,7 +110,6 @@ const Homepage = () => {
             `Received response for ${message.command}:`,
             message.data
           );
-          // Handle specific responses here if needed
           break;
       }
     };
@@ -92,33 +121,37 @@ const Homepage = () => {
   const sendMessageToExtension = (command: string = "fetchdata") => {
     const vscode = vscodeRef.current;
     if (vscode) {
-      console.log(`Sending ${command} message`);
-      vscode.postMessage({
-        command,
-        url:
-          command === "fetchdata" ? "https://dummyjson.com/quotes" : undefined,
-        method: "GET",
-      });
+      vscode.postMessage({ command });
     } else {
       console.error("VS Code API not available");
     }
   };
 
   const handleMenuClick = (id: number) => {
-    setSelectedMenu(id); // Update selectedMenu state
+    setSelectedMenu(id);
     const updatedMenuItems = menuItems.map((item) =>
       item.id === id
         ? { ...item, isSelected: true }
         : { ...item, isSelected: false }
     );
-    setMenuItems(updatedMenuItems); // Sync menuItems state with selection
-    console.log("Selected menu:", id);
-
-    // Send command based on selected menu value
+    setMenuItems(updatedMenuItems);
     const selectedItem = menuItems.find((item) => item.id === id);
-    if (selectedItem) {
-      sendMessageToExtension(selectedItem.value);
+    if (selectedItem) sendMessageToExtension(selectedItem.value);
+  };
+
+  const handleFileModalTogl = () => {
+    setFileModalOpen((prev) => !prev);
+    if (!fileModalOpen && allFilesRef.current.length) {
+      setDisplayedFiles(allFilesRef.current.slice(0, 15));
+      setVisibleCount(15);
     }
+  };
+
+  const handleLoadMore = () => {
+    const nextCount = visibleCount + 15;
+    const nextFiles = allFilesRef.current.slice(0, nextCount);
+    setDisplayedFiles(nextFiles);
+    setVisibleCount(nextCount);
   };
 
   return (
@@ -129,6 +162,8 @@ const Homepage = () => {
       <p className="subheader text-center text-sm mb-4">
         Create new code, add features, or fix issues—let's make it happen.
       </p>
+
+      {/* Menu Items */}
       <div className="flex flex-col md:flex-row justify-center md:justify-between gap-3 mb-4">
         {menuItems.map((menu) => (
           <MenuCard
@@ -138,26 +173,11 @@ const Homepage = () => {
             selectedMenu={selectedMenu}
           />
         ))}
-        <Card>
-          <CardHeading>
-            <Eye size={16} className="icon" />
-            Quotes (API Data)
-          </CardHeading>
-          <ul>
-            {showFiles.length > 0 ? (
-              showFiles.map((item, index) => (
-                <li key={index}>
-                  "{item.quote}" - <em>{item.author}</em>
-                </li>
-              ))
-            ) : (
-              <li>No data loaded. Click + to fetch.</li>
-            )}
-          </ul>
-        </Card>
       </div>
-      <div className="input-container flex items-center gap-2 border border-solid rounded-md p-2 mt-auto">
-        <Button onClick={() => sendMessageToExtension()}>
+
+      {/* Input + File Modal Toggle */}
+      <div className="input-container flex items-center gap-2 border border-solid rounded-md p-2 mt-auto relative">
+        <Button onClick={handleFileModalTogl}>
           <Plus size={10} />
         </Button>
         <Input
@@ -168,12 +188,50 @@ const Homepage = () => {
         <FormButton
           onClick={() => {
             console.log("Sending input:", input);
-            // Add send logic here if needed
+            // Send logic
           }}
         >
           Send (⌘ + ↵)
         </FormButton>
+
+        {/* File Modal */}
+        {fileModalOpen && (
+          <div className="absolute left-10 bottom-12 max-h-[40vh] w-3/4 md:w-2/4 overflow-y-auto z-50 border-1 border-dashed rounded-md p-5">
+            <ul className="space-y-2">
+              {displayedFiles.length > 0 ? (
+                <>
+                  {displayedFiles.map((file, index) => {
+                    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+                    return (
+                      <li
+                        key={index}
+                        className="flex justify-between items-center gap-2"
+                      >
+                        <div className="flex items-center gap-2">
+                          {getFileIcon(ext)}
+                          <p className="font-medium">{file.name}</p>
+                        </div>
+                        <p className="text-xs truncate max-w-[60%]">
+                          {file.path}
+                        </p>
+                      </li>
+                    );
+                  })}
+                  {displayedFiles.length < allFilesRef.current.length && (
+                    <li className="text-center mt-4">
+                      <Button onClick={handleLoadMore}>Load More</Button>
+                    </li>
+                  )}
+                </>
+              ) : (
+                <li>No files found.</li>
+              )}
+            </ul>
+          </div>
+        )}
       </div>
+
+      {/* Footer */}
       <footer className="footer flex items-center justify-between p-3 border-t border-solid rounded-md text-sm font-medium mb-2">
         <div className="flex items-center gap-2">
           <User size={10} />
@@ -181,8 +239,7 @@ const Homepage = () => {
         </div>
         <FormButton
           onClick={() => {
-            sendMessageToExtension();
-            console.log("Refreshing");
+            console.log("Refresh clicked");
           }}
         >
           <RefreshCw size={10} />

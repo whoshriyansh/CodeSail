@@ -1,5 +1,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
+import { listAllWorkspaceFiles } from "../extension";
+import { getIconForExtension } from "../utils/getIconForExtension";
 
 export class ViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewId = "codesailView";
@@ -30,18 +32,29 @@ export class ViewProvider implements vscode.WebviewViewProvider {
       //TODO: Use switch statement here
       if (message.command === "fetchdata") {
         try {
-          const response = await fetch(message.url, { method: message.method });
-          if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+          const files = await listAllWorkspaceFiles();
+
+          if (files) {
+            const filedata = files.map((file) => {
+              const path = file.fsPath;
+              const name = path.split(/[/\\]/).pop() || "";
+              const extension = name.split(".").pop()?.toLowerCase() || "";
+
+              return {
+                path,
+                name,
+                extension,
+                icon: getIconForExtension(extension),
+              };
+            });
+
+            webviewView.webview.postMessage({
+              command: "all-files",
+              data: filedata,
+            });
           }
-          const data = await response.json();
-          this._webview?.postMessage({ command: "apiResponse", data });
         } catch (error) {
           console.error("Fetch error:", error);
-          this._webview?.postMessage({
-            command: "error",
-            text: (error as Error).message,
-          });
         }
       }
     });

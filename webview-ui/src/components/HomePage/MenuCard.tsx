@@ -14,7 +14,9 @@ const MenuCard: React.FC<MenuCardProps> = ({ menu, onClick, selectedMenu }) => {
   return (
     <Card
       className={
-        isSelected ? "bg-[var(--vscode-terminal-ansiGreen)] text-white" : ""
+        isSelected
+          ? "bg-[var(--vscode-selection-background)]"
+          : "bg-[var(--vscode-disabledForeground)]"
       }
       onClick={onClick}
     >

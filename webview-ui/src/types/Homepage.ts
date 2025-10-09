@@ -1,8 +1,10 @@
 import { Eye, FileText, List } from "lucide-react";
 
-export interface Quote {
-  quote: string;
-  author: string;
+export interface FilePath {
+  path: string;
+  name: string;
+  extension: string;
+  icon: string;
 }
 
 // Define the menu item interface
