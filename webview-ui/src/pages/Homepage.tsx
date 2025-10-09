@@ -67,10 +67,10 @@ const getFileIcon = (ext: string) => {
 
 const Homepage = () => {
   const [input, setInput] = useState("");
+  const [searchTerm, setSeachTerm] = useState("");
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [selectedMenu, setSelectedMenu] = useState<number | null>(null);
   const [fileModalOpen, setFileModalOpen] = useState(false);
-  const [visibleCount, setVisibleCount] = useState(15); // How many files to show at a time
 
   const vscodeRef = useRef<any>(null);
   const allFilesRef = useRef<FilePath[]>([]);
@@ -96,7 +96,6 @@ const Homepage = () => {
         case "all-files": {
           allFilesRef.current = message.data;
           setDisplayedFiles(message.data.slice(0, 15));
-          setVisibleCount(15);
           break;
         }
         case "error":
@@ -143,15 +142,19 @@ const Homepage = () => {
     setFileModalOpen((prev) => !prev);
     if (!fileModalOpen && allFilesRef.current.length) {
       setDisplayedFiles(allFilesRef.current.slice(0, 15));
-      setVisibleCount(15);
     }
   };
 
-  const handleLoadMore = () => {
-    const nextCount = visibleCount + 15;
-    const nextFiles = allFilesRef.current.slice(0, nextCount);
-    setDisplayedFiles(nextFiles);
-    setVisibleCount(nextCount);
+  const handleSearch = (value: string) => {
+    setSeachTerm(value);
+    const filteredRes = allFilesRef.current.filter((file) =>
+      file.name.toLowerCase().includes(value.toLowerCase())
+    );
+    setDisplayedFiles(filteredRes);
+
+    if (value.trim() === "") {
+      setDisplayedFiles(allFilesRef.current.slice(0, 15));
+    }
   };
 
   return (
@@ -177,9 +180,18 @@ const Homepage = () => {
 
       {/* Input + File Modal Toggle */}
       <div className="input-container flex items-center gap-2 border border-solid rounded-md p-2 mt-auto relative">
-        <Button onClick={handleFileModalTogl}>
-          <Plus size={10} />
-        </Button>
+        {fileModalOpen ? (
+          <Input
+            value={searchTerm}
+            onChange={(e) => handleSearch(e.target.value)}
+            placeholder="Search for File"
+          />
+        ) : (
+          <Button onClick={handleFileModalTogl}>
+            <Plus size={10} />
+          </Button>
+        )}
+
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -196,7 +208,9 @@ const Homepage = () => {
 
         {/* File Modal */}
         {fileModalOpen && (
-          <div className="absolute left-10 bottom-12 max-h-[40vh] w-3/4 md:w-2/4 overflow-y-auto z-50 border-1 border-dashed rounded-md p-5">
+          <div
+            className={`absolute left-10 bottom-12 max-h-[40vh] w-3/4 md:w-2/4 overflow-y-auto z-50 border-1 border-solid rounded-t-md p-5 bg-[var(--vscode-editor-selectionBackground)]`}
+          >
             <ul className="space-y-2">
               {displayedFiles.length > 0 ? (
                 <>
@@ -217,11 +231,6 @@ const Homepage = () => {
                       </li>
                     );
                   })}
-                  {displayedFiles.length < allFilesRef.current.length && (
-                    <li className="text-center mt-4">
-                      <Button onClick={handleLoadMore}>Load More</Button>
-                    </li>
-                  )}
                 </>
               ) : (
                 <li>No files found.</li>

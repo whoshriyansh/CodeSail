@@ -4,8 +4,7 @@ import { ViewProvider } from "./components/ViewProvider";
 export async function listAllWorkspaceFiles() {
   // Define exclude patterns as a single string
   // Ignore node_modules, dist, build, .git, and hidden folders
-  const excludePatterns =
-    "**/node_modules/**,**/dist/**,**/build/**,**/.git/**,**/.*/**";
+  const excludePatterns = "**/{node_modules,dist,build,.git,.*}/**";
 
   try {
     const allFiles = await vscode.workspace.findFiles("**/*", excludePatterns);

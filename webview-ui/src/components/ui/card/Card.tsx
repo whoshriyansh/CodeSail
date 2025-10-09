@@ -1,4 +1,5 @@
 import React from "react";
+import "../../../index.css";
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
@@ -11,15 +12,7 @@ export const Card: React.FC<CardProps> = ({
   ...props
 }) => {
   return (
-    <div
-      className={`border-1 border-dashed rounded-md p-5 hover:scale-105 transition-all duration-300 ${className}`}
-      style={{
-        backgroundColor: "var(--vscode-sideBarSectionHeader-background)",
-        borderColor: "var(--vscode-sideBar-border)",
-        boxShadow: "var(--vscode-widget-shadow)",
-      }}
-      {...props}
-    >
+    <div className={`card ${className}`} {...props}>
       {children}
     </div>
   );
