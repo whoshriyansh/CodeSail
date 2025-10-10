@@ -7,6 +7,7 @@ import {
   FileText,
   Image,
   Code,
+  Cross,
 } from "lucide-react";
 import Button from "../components/ui/button/Button";
 import { FormButton, Input } from "../components/ui/formFields/FormFields";
@@ -43,7 +44,7 @@ const initialMenuItems: MenuItem[] = [
   },
 ];
 
-// ✅ Extension-icon mapping (extend as needed)
+// Extension-icon mapping (extend as needed)
 const getFileIcon = (ext: string) => {
   switch (ext) {
     case "ts":
@@ -67,16 +68,49 @@ const getFileIcon = (ext: string) => {
 
 const Homepage = () => {
   const [input, setInput] = useState("");
-  const [searchTerm, setSeachTerm] = useState("");
   const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
   const [selectedMenu, setSelectedMenu] = useState<number | null>(null);
+  const [selectedFile, setSelectedFile] = useState<FilePath | null>(null);
   const [fileModalOpen, setFileModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [analysisResponse, setAnalysisResponse] = useState<string[]>([]); // New state for analysis chunks
 
   const vscodeRef = useRef<any>(null);
   const allFilesRef = useRef<FilePath[]>([]);
   const [displayedFiles, setDisplayedFiles] = useState<FilePath[]>([]);
 
-  // Fetch VSCode API and initial data
+  const handleFileModalTogl = () => {
+    setFileModalOpen((prev) => !prev);
+    if (!fileModalOpen && allFilesRef.current.length) {
+      setDisplayedFiles(allFilesRef.current.slice(0, 15));
+    }
+  };
+
+  const handleSelectFile = (file: FilePath) => {
+    setSelectedFile(file);
+    setFileModalOpen(false);
+    setSearchTerm("");
+  };
+
+  const handleSearch = (value: string) => {
+    setSearchTerm(value);
+    const filtered = allFilesRef.current.filter((file) =>
+      file.name.toLowerCase().includes(value.toLowerCase())
+    );
+    setDisplayedFiles(filtered.slice(0, 15)); // Always limit to 15
+    if (value.trim() === "") {
+      setDisplayedFiles(allFilesRef.current.slice(0, 15));
+    }
+  };
+
+  // Clear analysis response to show menu again
+  const handleClearAnalysis = () => {
+    setAnalysisResponse([]);
+    setSelectedMenu(null); // Reset menu selection
+    setMenuItems(initialMenuItems); // Reset menu items
+  };
+
+  // Fetch VSCode API and handle messages
   useEffect(() => {
     try {
       const vscode = acquireVsCodeApi();
@@ -86,11 +120,10 @@ const Homepage = () => {
       console.error("Failed to acquire VS Code API:", e);
     }
 
-    sendMessageToExtension(); // initial fetch
+    sendMessageToExtension(); // Initial fetch
 
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
-      console.log("Frontend received message:", message);
 
       switch (message.command) {
         case "all-files": {
@@ -98,18 +131,31 @@ const Homepage = () => {
           setDisplayedFiles(message.data.slice(0, 15));
           break;
         }
-        case "error":
+        case "error": {
           console.error("Error from extension:", message.text);
           alert(`Error: ${message.text}`);
           break;
-        case "Phases":
+        }
+        case "analysisChunk": {
+          // Append chunk to analysis response
+          setAnalysisResponse((prev) => [...prev, message.data.content]);
+          break;
+        }
+        case "analysisComplete": {
+          break;
+        }
+        case "File Recived": {
+          console.log("Analysed File Successful", message.data);
+          break;
+        }
         case "Plan":
-        case "Review":
+        case "Review": {
           console.log(
             `Received response for ${message.command}:`,
             message.data
           );
           break;
+        }
       }
     };
 
@@ -126,6 +172,28 @@ const Homepage = () => {
     }
   };
 
+  const sendForAnlyses = () => {
+    const vscode = vscodeRef.current;
+
+    if (input.trim() === "" || !selectedFile) return;
+
+    const path = selectedFile?.path;
+    const name = selectedFile?.name;
+
+    if (vscode) {
+      // Clear previous analysis before sending new request
+      setAnalysisResponse([]);
+      vscode.postMessage({
+        command: "Analyse File",
+        data: {
+          fileName: name,
+          filePath: path,
+          prompt: input,
+        },
+      });
+    }
+  };
+
   const handleMenuClick = (id: number) => {
     setSelectedMenu(id);
     const updatedMenuItems = menuItems.map((item) =>
@@ -138,25 +206,6 @@ const Homepage = () => {
     if (selectedItem) sendMessageToExtension(selectedItem.value);
   };
 
-  const handleFileModalTogl = () => {
-    setFileModalOpen((prev) => !prev);
-    if (!fileModalOpen && allFilesRef.current.length) {
-      setDisplayedFiles(allFilesRef.current.slice(0, 15));
-    }
-  };
-
-  const handleSearch = (value: string) => {
-    setSeachTerm(value);
-    const filteredRes = allFilesRef.current.filter((file) =>
-      file.name.toLowerCase().includes(value.toLowerCase())
-    );
-    setDisplayedFiles(filteredRes);
-
-    if (value.trim() === "") {
-      setDisplayedFiles(allFilesRef.current.slice(0, 15));
-    }
-  };
-
   return (
     <div className="flex flex-col px-4 py-2 overflow-y-auto h-[100vh]">
       <div className="header text-center text-lg font-semibold mb-1">
@@ -166,17 +215,31 @@ const Homepage = () => {
         Create new code, add features, or fix issues—let's make it happen.
       </p>
 
-      {/* Menu Items */}
-      <div className="flex flex-col md:flex-row justify-center md:justify-between gap-3 mb-4">
-        {menuItems.map((menu) => (
-          <MenuCard
-            key={menu.id}
-            menu={menu}
-            onClick={() => handleMenuClick(menu.id)}
-            selectedMenu={selectedMenu}
-          />
-        ))}
-      </div>
+      {/* Conditionally render Menu or Analysis Box */}
+      {analysisResponse.length > 0 ? (
+        <div className="analysis-box flex flex-col gap-2 p-4 border border-solid rounded-md bg-[var(--vscode-editor-background)] max-h-[60vh] overflow-y-auto mb-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-semibold">Code Analysis</h2>
+            <Button onClick={handleClearAnalysis}>
+              <Cross size={14} /> Clear
+            </Button>
+          </div>
+          <pre className="text-sm whitespace-pre-wrap">
+            {analysisResponse.join("\n")}
+          </pre>
+        </div>
+      ) : (
+        <div className="flex flex-col md:flex-row justify-center md:justify-between gap-3 mb-4">
+          {menuItems.map((menu) => (
+            <MenuCard
+              key={menu.id}
+              menu={menu}
+              onClick={() => handleMenuClick(menu.id)}
+              selectedMenu={selectedMenu}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Input + File Modal Toggle */}
       <div className="input-container flex items-center gap-2 border border-solid rounded-md p-2 mt-auto relative">
@@ -186,31 +249,36 @@ const Homepage = () => {
             onChange={(e) => handleSearch(e.target.value)}
             placeholder="Search for File"
           />
+        ) : selectedFile ? (
+          <Input
+            value={selectedFile.name}
+            onClick={handleFileModalTogl}
+            readOnly
+          />
         ) : (
           <Button onClick={handleFileModalTogl}>
             <Plus size={10} />
           </Button>
         )}
-
         <Input
           value={input}
           onChange={(e) => setInput(e.target.value)}
           placeholder="Describe your task (@mention for context)"
         />
-        <FormButton
-          onClick={() => {
-            console.log("Sending input:", input);
-            // Send logic
-          }}
-        >
-          Send (⌘ + ↵)
-        </FormButton>
-
+        <FormButton onClick={sendForAnlyses}>Send (⌘ + ↵)</FormButton>
         {/* File Modal */}
         {fileModalOpen && (
           <div
-            className={`absolute left-10 bottom-12 max-h-[40vh] w-3/4 md:w-2/4 overflow-y-auto z-50 border-1 border-solid rounded-t-md p-5 bg-[var(--vscode-editor-selectionBackground)]`}
+            className={`absolute left-10 bottom-12 max-h-[40vh] w-3/4 md:w-2/4 overflow-y-auto z-10 border-1 border-solid rounded-t-md p-5 bg-[var(--vscode-editor-selectionBackground)] flex flex-col gap-2`}
           >
+            <Button
+              className="sticky"
+              onClick={() => {
+                setFileModalOpen((prev) => !prev);
+              }}
+            >
+              <Cross />
+            </Button>
             <ul className="space-y-2">
               {displayedFiles.length > 0 ? (
                 <>
@@ -219,7 +287,8 @@ const Homepage = () => {
                     return (
                       <li
                         key={index}
-                        className="flex justify-between items-center gap-2"
+                        className="flex justify-between items-center gap-2 cursor-pointer"
+                        onClick={() => handleSelectFile(file)}
                       >
                         <div className="flex items-center gap-2">
                           {getFileIcon(ext)}

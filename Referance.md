@@ -31,3 +31,15 @@ How to get response from extenion in web view pannel in react
 `https://medium.com/@ashleyluu87/data-flow-from-vs-code-extension-webview-panel-react-components-2f94b881467e`
 
 how to import acquire VsCode Api in react webview pannel
+
+how to send file from the react web view to the vs code extension
+
+how to get a file from react web view in vs code extension and read that file content ?
+
+how to read a file from in vs code extenion worspace api with path ?
+
+how to show the live thinking of the LLm model while anaylsing files
+
+what does worksapce folder retuns in vs code extension
+
+hoe to read the content of the file if file path is given in vs code extenion with worspace api

@@ -1,12 +1,13 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { listAllWorkspaceFiles } from "../extension";
+import { listAllWorkspaceFiles, readFileContent } from "../extension";
 import { getIconForExtension } from "../utils/getIconForExtension";
+import { streamDeepSeekAnalysis } from "../api/CodeAnalysis/CodeAnalysis";
 
 export class ViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewId = "codesailView";
 
-  private _webview?: vscode.Webview; // Store for sending messages back
+  private _webview?: vscode.Webview;
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
 
@@ -15,7 +16,7 @@ export class ViewProvider implements vscode.WebviewViewProvider {
     context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
   ) {
-    this._webview = webviewView.webview; // Save reference
+    this._webview = webviewView.webview;
 
     webviewView.webview.options = {
       enableScripts: true,
@@ -24,44 +25,113 @@ export class ViewProvider implements vscode.WebviewViewProvider {
 
     webviewView.webview.html = this._getHtmlForWebview(webviewView.webview);
 
-    // using onDidReceiveMessage api for getting command and featching data from the react view pannel
     webviewView.webview.onDidReceiveMessage(async (message) => {
-      console.log("Extension received message:", message);
+      switch (message.command) {
+        case "fetchdata":
+          try {
+            const files = await listAllWorkspaceFiles();
 
-      //If statement for featching data for the specific command
-      //TODO: Use switch statement here
-      if (message.command === "fetchdata") {
-        try {
-          const files = await listAllWorkspaceFiles();
+            if (files) {
+              const filedata = files.map((file) => {
+                const path = file.fsPath;
+                const name = path.split(/[/\\]/).pop() || "";
+                const extension = name.split(".").pop()?.toLowerCase() || "";
 
-          if (files) {
-            const filedata = files.map((file) => {
-              const path = file.fsPath;
-              const name = path.split(/[/\\]/).pop() || "";
-              const extension = name.split(".").pop()?.toLowerCase() || "";
+                return {
+                  path,
+                  name,
+                  extension,
+                  icon: getIconForExtension(extension),
+                };
+              });
 
-              return {
-                path,
-                name,
-                extension,
-                icon: getIconForExtension(extension),
-              };
-            });
+              webviewView.webview.postMessage({
+                command: "all-files",
+                data: filedata,
+              });
+            }
+          } catch (error) {
+            console.error("Fetch error:", error);
+          }
+          break;
+        case "Analyse File": {
+          try {
+            if (
+              !message.data?.filePath ||
+              !message.data?.prompt ||
+              !message.data?.fileName
+            ) {
+              webviewView.webview.postMessage({
+                command: "error",
+                text: "Missing file or prompt for analysis.",
+              });
+              return;
+            }
 
+            webviewView.webview.postMessage({ command: "analysisStart" });
+            const code = await readFileContent(message.data.filePath);
+            // console.log("readFileContent result:", {
+            //   filePath: message.data.filePath,
+            //   codeLength: code?.length || 0,
+            //   codeSnippet: code
+            //     ? code.slice(0, 100) + (code.length > 100 ? "..." : "")
+            //     : "null or empty",
+            // });
+
+            if (!code) {
+              vscode.window.showInformationMessage(`No File Found`);
+              return; // Explicitly return to stop execution
+            }
+
+            await streamDeepSeekAnalysis(
+              code,
+              message.data.prompt,
+              (chunk) => {
+                webviewView.webview.postMessage({
+                  command: "analysisChunk",
+                  data: {
+                    ...chunk,
+                    prompt: message.data.prompt,
+                  },
+                });
+              },
+              (error) => {
+                if (error) {
+                  console.error("StreamDeepSeekAnalysis error:", error);
+                  webviewView.webview.postMessage({
+                    command: "error",
+                    text: error,
+                  });
+                } else {
+                  console.log("Analysis completed successfully");
+                  webviewView.webview.postMessage({
+                    command: "analysisComplete",
+                  });
+                }
+              }
+            );
+          } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.error("Analysis error:", msg, error);
             webviewView.webview.postMessage({
-              command: "all-files",
-              data: filedata,
+              command: "error",
+              text: `Analysis error: ${msg}`,
             });
           }
-        } catch (error) {
-          console.error("Fetch error:", error);
+          break;
+        }
+        default: {
+          webviewView.webview.postMessage({
+            command: "error",
+            text: `Unknown command: ${message.command}`,
+          });
+          break;
         }
       }
     });
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {
-    //Here we are joining path for the index.js file of our react application
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(
         this._extensionUri,
@@ -71,8 +141,6 @@ export class ViewProvider implements vscode.WebviewViewProvider {
         "index.js"
       )
     );
-
-    //Here we are Joining path for our css file which is in accoridng to vs code styling
     const styleUri = webview.asWebviewUri(
       vscode.Uri.joinPath(
         this._extensionUri,
@@ -82,10 +150,7 @@ export class ViewProvider implements vscode.WebviewViewProvider {
         "index.css"
       )
     );
-
-    //Here we are creating a html file as it should be the root to render in a web view pannel so we are giving our js file and style file
-    //Remember only 1 html file get's deployed in 1 web view.
-    const cspSource = `default-src 'none'; style-src ${webview.cspSource}; script-src ${webview.cspSource};`;
+    const cspSource = `default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource};`;
     return `<!DOCTYPE html>
       <html lang="en">
       <head>
