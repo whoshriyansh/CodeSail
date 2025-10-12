@@ -7,6 +7,14 @@ import MenuContainer from "../components/HomePage/MenuContainer";
 import InputContainer from "../components/HomePage/InputContainer";
 import FileModal from "../components/HomePage/FileModal";
 import Footer from "../components/HomePage/Footer";
+import { getVsCodeApi } from "../utils/vscode";
+
+interface UserProfile {
+  avatar_url: string;
+  email: string;
+  username: string;
+  accessToken?: string; // For sign-out
+}
 
 const Homepage = () => {
   const [input, setInput] = useState("");
@@ -15,8 +23,11 @@ const Homepage = () => {
   const [selectedFile, setSelectedFile] = useState<FilePath | null>(null);
   const [fileModalOpen, setFileModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [profileModelOpen, setProfileModelOpen] = useState(false);
   const [analysisResponse, setAnalysisResponse] = useState<string[]>([]);
-  const vscodeRef = useRef<any>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const vscodeRef = useRef(getVsCodeApi()); // Get API once on mount
   const allFilesRef = useRef<FilePath[]>([]);
   const [displayedFiles, setDisplayedFiles] = useState<FilePath[]>([]);
 
@@ -25,6 +36,10 @@ const Homepage = () => {
     if (!fileModalOpen && allFilesRef.current.length) {
       setDisplayedFiles(allFilesRef.current.slice(0, 15));
     }
+  };
+
+  const handleProfileModalTogl = () => {
+    setProfileModelOpen((prev) => !prev);
   };
 
   const handleSelectFile = (file: FilePath) => {
@@ -50,15 +65,45 @@ const Homepage = () => {
     setMenuItems(initialMenuItems);
   };
 
-  useEffect(() => {
-    try {
-      const vscode = acquireVsCodeApi();
-      vscodeRef.current = vscode;
-      console.log("VS Code API acquired successfully");
-    } catch (e) {
-      console.error("Failed to acquire VS Code API:", e);
-    }
+  const sendMessageToExtension = (
+    command: string = "fetchdata",
+    data?: any
+  ) => {
+    vscodeRef.current.postMessage({ command, data });
+  };
 
+  const sendForAnlyses = () => {
+    if (input.trim() === "" || !selectedFile) return;
+    const path = selectedFile?.path;
+    const name = selectedFile?.name;
+
+    setAnalysisResponse([]);
+    setIsLoading(true);
+    sendMessageToExtension("Analyse File", {
+      fileName: name,
+      filePath: path,
+      prompt: input,
+    });
+  };
+
+  const sendAuthReq = () => {
+    setIsLoading(true);
+    sendMessageToExtension("Github Authentication");
+  };
+
+  const handleMenuClick = (id: number) => {
+    setSelectedMenu(id);
+    const updatedMenuItems = menuItems.map((item) =>
+      item.id === id
+        ? { ...item, isSelected: true }
+        : { ...item, isSelected: false }
+    );
+    setMenuItems(updatedMenuItems);
+    const selectedItem = menuItems.find((item) => item.id === id);
+    if (selectedItem) sendMessageToExtension(selectedItem.value);
+  };
+
+  useEffect(() => {
     sendMessageToExtension();
 
     const handleMessage = (event: MessageEvent) => {
@@ -72,6 +117,7 @@ const Homepage = () => {
         case "error": {
           console.error("Error from extension:", message.text);
           alert(`Error: ${message.text}`);
+          setIsLoading(false);
           break;
         }
         case "analysisChunk": {
@@ -79,6 +125,20 @@ const Homepage = () => {
           break;
         }
         case "analysisComplete": {
+          setIsLoading(false);
+          break;
+        }
+        case "userProfile": {
+          setUserProfile({
+            ...message.data,
+            accessToken: message.data.accessToken || undefined,
+          });
+          setIsLoading(false);
+          break;
+        }
+        case "signedOut": {
+          setUserProfile(null);
+          setIsLoading(false);
           break;
         }
         case "File Recived": {
@@ -99,46 +159,6 @@ const Homepage = () => {
     window.addEventListener("message", handleMessage);
     return () => window.removeEventListener("message", handleMessage);
   }, []);
-
-  const sendMessageToExtension = (command: string = "fetchdata") => {
-    const vscode = vscodeRef.current;
-    if (vscode) {
-      vscode.postMessage({ command });
-    } else {
-      console.error("VS Code API not available");
-    }
-  };
-
-  const sendForAnlyses = () => {
-    const vscode = vscodeRef.current;
-    if (input.trim() === "" || !selectedFile) return;
-    const path = selectedFile?.path;
-    const name = selectedFile?.name;
-
-    if (vscode) {
-      setAnalysisResponse([]);
-      vscode.postMessage({
-        command: "Analyse File",
-        data: {
-          fileName: name,
-          filePath: path,
-          prompt: input,
-        },
-      });
-    }
-  };
-
-  const handleMenuClick = (id: number) => {
-    setSelectedMenu(id);
-    const updatedMenuItems = menuItems.map((item) =>
-      item.id === id
-        ? { ...item, isSelected: true }
-        : { ...item, isSelected: false }
-    );
-    setMenuItems(updatedMenuItems);
-    const selectedItem = menuItems.find((item) => item.id === id);
-    if (selectedItem) sendMessageToExtension(selectedItem.value);
-  };
 
   return (
     <div className="flex flex-col px-2 py-2 overflow-y-hidden h-[100vh]">
@@ -175,8 +195,12 @@ const Homepage = () => {
         onSelectFile={handleSelectFile}
       />
       <Footer
-        userStatus="Pro (Trial)"
-        onRefresh={() => console.log("Refresh clicked")}
+        userStatus={userProfile ? "Pro (Authenticated)" : "Guest"}
+        isOpen={profileModelOpen}
+        onClose={handleProfileModalTogl}
+        profile={userProfile}
+        onSignIn={sendAuthReq}
+        isLoading={isLoading}
       />
     </div>
   );

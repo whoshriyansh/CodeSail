@@ -32,6 +32,8 @@ How to get response from extenion in web view pannel in react
 
 how to import acquire VsCode Api in react webview pannel
 
+how to get get acquireVsCodeApi in a react web view pannel whcih is inside vs extention code
+
 how to send file from the react web view to the vs code extension
 
 how to get a file from react web view in vs code extension and read that file content ?

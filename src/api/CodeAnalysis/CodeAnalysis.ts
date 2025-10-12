@@ -7,7 +7,7 @@ export async function streamDeepSeekAnalysis(
   onComplete: (error?: string) => void
 ): Promise<void> {
   const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY,
+    apiKey: "process.env.GROQ_API_KEY",
   });
 
   const SYSTEM_PROMPT = `

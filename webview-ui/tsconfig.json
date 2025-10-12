@@ -26,6 +26,6 @@
     "declarationMap": true // Generate source maps for declaration files
   },
 
-  "include": ["src/**/*.ts", "images.d.ts"], // Include all .ts files in the src directory
+  "include": ["src/**/*.ts", "src/global.d.ts"], // Include all .ts files in the src directory
   "exclude": ["node_modules", "dist"] // Exclude node_modules and test environments
 }

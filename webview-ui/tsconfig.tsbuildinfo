@@ -1,1 +1,1 @@
-{"root":["./src/data/menu.ts","./src/types/homepage.ts","./images.d.ts"],"version":"5.9.3"}
+{"root":["./src/global.d.ts","./src/data/menu.ts","./src/types/homepage.ts","./src/utils/vscode.ts"],"version":"5.9.3"}

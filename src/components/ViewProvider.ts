@@ -3,6 +3,7 @@ import * as path from "path";
 import { listAllWorkspaceFiles, readFileContent } from "../extension";
 import { getIconForExtension } from "../utils/getIconForExtension";
 import { streamDeepSeekAnalysis } from "../api/CodeAnalysis/CodeAnalysis";
+import axios from "axios";
 
 export class ViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewId = "codesailView";
@@ -10,6 +11,12 @@ export class ViewProvider implements vscode.WebviewViewProvider {
   private _webview?: vscode.Webview;
 
   constructor(private readonly _extensionUri: vscode.Uri) {}
+
+  public async sendAuthRequest() {
+    if (this._webview) {
+      this._webview.postMessage({ command: "Github Authentication" });
+    }
+  }
 
   public resolveWebviewView(
     webviewView: vscode.WebviewView,
@@ -52,6 +59,10 @@ export class ViewProvider implements vscode.WebviewViewProvider {
             }
           } catch (error) {
             console.error("Fetch error:", error);
+            webviewView.webview.postMessage({
+              command: "error",
+              text: `Failed to fetch files: ${String(error)}`,
+            });
           }
           break;
         case "Analyse File": {
@@ -70,17 +81,10 @@ export class ViewProvider implements vscode.WebviewViewProvider {
 
             webviewView.webview.postMessage({ command: "analysisStart" });
             const code = await readFileContent(message.data.filePath);
-            // console.log("readFileContent result:", {
-            //   filePath: message.data.filePath,
-            //   codeLength: code?.length || 0,
-            //   codeSnippet: code
-            //     ? code.slice(0, 100) + (code.length > 100 ? "..." : "")
-            //     : "null or empty",
-            // });
 
             if (!code) {
               vscode.window.showInformationMessage(`No File Found`);
-              return; // Explicitly return to stop execution
+              return;
             }
 
             await streamDeepSeekAnalysis(
@@ -120,6 +124,64 @@ export class ViewProvider implements vscode.WebviewViewProvider {
           }
           break;
         }
+        case "Github Authentication":
+          try {
+            const session = await vscode.authentication.getSession(
+              "github",
+              ["user:email"],
+              { createIfNone: true }
+            );
+            if (!session) {
+              vscode.window.showErrorMessage("GitHub authentication failed.");
+              webviewView.webview.postMessage({
+                command: "error",
+                text: "GitHub authentication failed.",
+              });
+              return;
+            }
+
+            const { data } = await axios.get("https://api.github.com/user", {
+              headers: {
+                Authorization: `token ${session.accessToken}`,
+                Accept: "application/vnd.github.v3+json",
+              },
+            });
+
+            const userDataForBackend = {
+              githubId: data.id,
+              username: data.login,
+              email: data.email || `${data.login}@github.com`,
+              avatarUrl: data.avatar_url,
+              accessToken: session.accessToken,
+            };
+
+            await axios.post(
+              "http://localhost:8001/api/auth/register",
+              userDataForBackend
+            );
+
+            webviewView.webview.postMessage({
+              command: "userProfile",
+              data: {
+                avatar_url: data.avatar_url,
+                email: data.email || `${data.login}@github.com`,
+                username: data.login,
+                accessToken: session.accessToken, // For sign-out
+              },
+            });
+
+            vscode.window.showInformationMessage(
+              "Successfully authenticated with GitHub!"
+            );
+          } catch (error: any) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.error("Authentication error:", msg, error);
+            webviewView.webview.postMessage({
+              command: "error",
+              text: `Error during authentication: ${msg}`,
+            });
+          }
+          break;
         default: {
           webviewView.webview.postMessage({
             command: "error",
@@ -132,29 +194,6 @@ export class ViewProvider implements vscode.WebviewViewProvider {
   }
 
   private _getHtmlForWebview(webview: vscode.Webview) {
-<<<<<<< HEAD
-    const isDev = process.env.NODE_ENV === "development";
-
-    if (isDev) {
-      // In dev mode, load directly from Vite dev server
-      const viteDevServerUrl = "http://localhost:3000/";
-
-      return `<!DOCTYPE html>
-      <html lang="en">
-      <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>CodeSail Dev</title>
-      </head>
-      <body>
-        <div id="root"></div>
-        <script type="module" src="${viteDevServerUrl}/src/main.tsx"></script>
-      </body>
-      </html>`;
-    }
-
-=======
->>>>>>> 2ce6f20e7c6a09127f8cb2a34a1b5c438687cbb8
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(
         this._extensionUri,
@@ -173,7 +212,7 @@ export class ViewProvider implements vscode.WebviewViewProvider {
         "index.css"
       )
     );
-    const cspSource = `default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource};`;
+    const cspSource = `default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} https:; connect-src http://localhost:8001;`;
     return `<!DOCTYPE html>
       <html lang="en">
       <head>

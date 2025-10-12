@@ -45,68 +45,12 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.registerWebviewViewProvider(ViewProvider.viewId, provider)
   );
 
-  // Register the correct command
+  // Register the authenticate command
   context.subscriptions.push(
     vscode.commands.registerCommand("codesail.authenticate", async () => {
-      try {
-        const session = await vscode.authentication.getSession(
-          "github",
-          ["user"],
-          {
-            createIfNone: true,
-          }
-        );
-        if (!session) {
-          console.log("GitHub session not available.");
-          vscode.window.showErrorMessage("GitHub authentication failed.");
-          return;
-        }
-
-        console.log("GitHub Access Token:", session.accessToken);
-        const { data } = await axios.get("https://api.github.com/user", {
-          headers: {
-            Authorization: `token ${session.accessToken}`,
-            Accept: "application/vnd.github.v3+json",
-          },
-        });
-
-        console.log("GitHub User Data:", data);
-
-        const userDataForBackend = {
-          githubId: data.id,
-          username: data.login,
-          email: data.email,
-          avatarUrl: data.avatar_url,
-          accessToken: session.accessToken,
-        };
-        await axios.post(
-          "http://localhost:8001/api/auth/register",
-          userDataForBackend
-        );
-        vscode.window.showInformationMessage(
-          "Successfully authenticated with GitHub!"
-        );
-      } catch (error: any) {
-        const message = getErrorMessage(error);
-        console.error("Authentication error:", message, error);
-        vscode.window.showErrorMessage(
-          `Error during authentication: ${message}`
-        );
-      }
+      provider.sendAuthRequest();
     })
   );
-}
-
-function getErrorMessage(error: unknown): string {
-  if (error instanceof AxiosError) {
-    return (
-      error.response?.data?.error || error.message || "Unknown Axios error"
-    );
-  }
-  if (error instanceof Error) {
-    return error.message;
-  }
-  return String(error);
 }
 
 export function deactivate() {}

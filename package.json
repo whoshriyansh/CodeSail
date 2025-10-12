@@ -42,13 +42,7 @@
           "icon": "./src/icons/codesail_app.png"
         }
       ]
-    },
-    "commands": [
-      {
-        "command": "codesail.authenticate",
-        "title": "Authenticate with GitHub"
-      }
-    ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
