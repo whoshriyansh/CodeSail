@@ -40,7 +40,7 @@ export async function readFileContent(filePath: string) {
 export function activate(context: vscode.ExtensionContext) {
   console.log('Congratulations, your extension "codesail" is now active!');
 
-  const provider = new ViewProvider(context.extensionUri);
+  const provider = new ViewProvider(context.extensionUri, context); // Pass context
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(ViewProvider.viewId, provider)
   );

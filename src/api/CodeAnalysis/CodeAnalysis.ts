@@ -3,11 +3,12 @@ import Groq from "groq-sdk";
 export async function streamDeepSeekAnalysis(
   code: string,
   prompt: string,
+  apiKey: string, // Add apiKey parameter
   onChunk: (chunk: { type: "thinking" | "final"; content: string }) => void,
   onComplete: (error?: string) => void
 ): Promise<void> {
   const groq = new Groq({
-    apiKey: "process.env.GROQ_API_KEY",
+    apiKey, // Use passed key
   });
 
   const SYSTEM_PROMPT = `
@@ -35,9 +36,14 @@ Rules for Response Structure:
     return;
   }
 
+  if (!apiKey) {
+    onComplete("Error: Grok API key not configured");
+    return;
+  }
+
   try {
     const stream = await groq.chat.completions.create({
-      model: "llama-3.1-8b-instant", // Start with this—fast & code-capable
+      model: "llama-3.1-8b-instant",
       messages: [
         { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: USER_PROMPT },
@@ -78,6 +84,6 @@ Rules for Response Structure:
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error);
     console.error("Groq API error:", message, error);
-    onComplete(`Groq API error: ${message}`);
+    onComplete(`Grok API error: ${message}`);
   }
 }

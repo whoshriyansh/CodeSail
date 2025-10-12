@@ -13,7 +13,7 @@ interface UserProfile {
   avatar_url: string;
   email: string;
   username: string;
-  accessToken?: string; // For sign-out
+  accessToken?: string;
 }
 
 const Homepage = () => {
@@ -27,7 +27,8 @@ const Homepage = () => {
   const [analysisResponse, setAnalysisResponse] = useState<string[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const vscodeRef = useRef(getVsCodeApi()); // Get API once on mount
+  const [keyStatus, setKeyStatus] = useState<string | null>(null); // New state for key submission feedback
+  const vscodeRef = useRef(getVsCodeApi());
   const allFilesRef = useRef<FilePath[]>([]);
   const [displayedFiles, setDisplayedFiles] = useState<FilePath[]>([]);
 
@@ -91,6 +92,12 @@ const Homepage = () => {
     sendMessageToExtension("Github Authentication");
   };
 
+  const sendKeySubmission = () => {
+    setIsLoading(true);
+    setKeyStatus(null); // Clear previous status
+    sendMessageToExtension("Submit Grok Key");
+  };
+
   const handleMenuClick = (id: number) => {
     setSelectedMenu(id);
     const updatedMenuItems = menuItems.map((item) =>
@@ -116,8 +123,8 @@ const Homepage = () => {
         }
         case "error": {
           console.error("Error from extension:", message.text);
-          alert(`Error: ${message.text}`);
           setIsLoading(false);
+          setKeyStatus(message.text); // Show error in UI
           break;
         }
         case "analysisChunk": {
@@ -151,6 +158,11 @@ const Homepage = () => {
             `Received response for ${message.command}:`,
             message.data
           );
+          break;
+        }
+        case "keySaved": {
+          setKeyStatus("Grok API key saved successfully!");
+          setIsLoading(false);
           break;
         }
       }
@@ -201,6 +213,8 @@ const Homepage = () => {
         profile={userProfile}
         onSignIn={sendAuthReq}
         isLoading={isLoading}
+        sendKeySubmission={sendKeySubmission}
+        keyStatus={keyStatus} // Pass key status to Footer
       />
     </div>
   );

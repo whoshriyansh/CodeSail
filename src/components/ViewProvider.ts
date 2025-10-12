@@ -9,8 +9,14 @@ export class ViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewId = "codesailView";
 
   private _webview?: vscode.Webview;
+  private readonly _context: vscode.ExtensionContext; // Add context
 
-  constructor(private readonly _extensionUri: vscode.Uri) {}
+  constructor(
+    private readonly _extensionUri: vscode.Uri,
+    context: vscode.ExtensionContext // Add context parameter
+  ) {
+    this._context = context; // Store context
+  }
 
   public async sendAuthRequest() {
     if (this._webview) {
@@ -37,13 +43,11 @@ export class ViewProvider implements vscode.WebviewViewProvider {
         case "fetchdata":
           try {
             const files = await listAllWorkspaceFiles();
-
             if (files) {
               const filedata = files.map((file) => {
                 const path = file.fsPath;
                 const name = path.split(/[/\\]/).pop() || "";
                 const extension = name.split(".").pop()?.toLowerCase() || "";
-
                 return {
                   path,
                   name,
@@ -51,7 +55,6 @@ export class ViewProvider implements vscode.WebviewViewProvider {
                   icon: getIconForExtension(extension),
                 };
               });
-
               webviewView.webview.postMessage({
                 command: "all-files",
                 data: filedata,
@@ -87,9 +90,19 @@ export class ViewProvider implements vscode.WebviewViewProvider {
               return;
             }
 
+            const apiKey = await this._context.secrets.get("grokApiKey"); // Get key
+            if (!apiKey) {
+              webviewView.webview.postMessage({
+                command: "error",
+                text: "Grok API key not configured. Please submit your key.",
+              });
+              return;
+            }
+
             await streamDeepSeekAnalysis(
               code,
               message.data.prompt,
+              apiKey, // Pass key
               (chunk) => {
                 webviewView.webview.postMessage({
                   command: "analysisChunk",
@@ -166,7 +179,7 @@ export class ViewProvider implements vscode.WebviewViewProvider {
                 avatar_url: data.avatar_url,
                 email: data.email || `${data.login}@github.com`,
                 username: data.login,
-                accessToken: session.accessToken, // For sign-out
+                accessToken: session.accessToken,
               },
             });
 
@@ -179,6 +192,34 @@ export class ViewProvider implements vscode.WebviewViewProvider {
             webviewView.webview.postMessage({
               command: "error",
               text: `Error during authentication: ${msg}`,
+            });
+          }
+          break;
+        case "Submit Grok Key":
+          try {
+            const input = await vscode.window.showInputBox({
+              prompt: "Enter your Grok API key (from console.x.ai)",
+              password: true,
+              ignoreFocusOut: true,
+            });
+            if (input) {
+              await this._context.secrets.store("grokApiKey", input);
+              webviewView.webview.postMessage({
+                command: "keySaved",
+                text: "Grok API key saved successfully!",
+              });
+            } else {
+              webviewView.webview.postMessage({
+                command: "error",
+                text: "No API key provided.",
+              });
+            }
+          } catch (error: any) {
+            const msg = error instanceof Error ? error.message : String(error);
+            console.error("Key submission error:", msg, error);
+            webviewView.webview.postMessage({
+              command: "error",
+              text: `Failed to save API key: ${msg}`,
             });
           }
           break;

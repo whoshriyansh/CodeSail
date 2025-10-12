@@ -19,7 +19,9 @@ interface FooterProps {
   className?: string;
   profile?: Profile | null;
   onSignIn: () => void;
+  sendKeySubmission: () => void;
   isLoading: boolean;
+  keyStatus?: string | null; // New prop for key submission status
 }
 
 const Footer: FunctionComponent<FooterProps> = ({
@@ -29,7 +31,9 @@ const Footer: FunctionComponent<FooterProps> = ({
   onClose,
   profile,
   onSignIn,
+  sendKeySubmission,
   isLoading,
+  keyStatus,
 }) => {
   return (
     <footer
@@ -38,15 +42,35 @@ const Footer: FunctionComponent<FooterProps> = ({
         className
       )}
       style={{
-        backgroundColor: "var(--vscode-button-background)",
+        backgroundColor: "var(--vscode-input-background)",
         color: "var(--vscode-input-foreground)",
       }}
     >
-      <div className="flex items-center gap-2">
-        <Button onClick={onClose}>
-          <User size={16} />
-        </Button>
-        <span>{userStatus}</span>
+      <div className="flex items-center justify-between gap-2 w-full">
+        <div className="flex items-center justify-center gap-2">
+          <FormButton onClick={onClose}>
+            <User size={16} />
+          </FormButton>
+          <span>{userStatus}</span>
+        </div>
+
+        <div>
+          {keyStatus ? (
+            <p className="text-sm text-[var(--vscode-foreground-description)]">
+              {keyStatus}
+            </p>
+          ) : (
+            <FormButton
+              className="flex items-center justify-center gap-2"
+              onClick={sendKeySubmission}
+              disabled={isLoading}
+            >
+              Submit Grok API Key
+              <ExternalLink size={16} />
+            </FormButton>
+          )}
+        </div>
+
         <Modal
           isOpen={isOpen}
           onClose={onClose}
@@ -55,7 +79,7 @@ const Footer: FunctionComponent<FooterProps> = ({
             className
           )}
         >
-          <div className="flex flex-col items-start gap-4">
+          <div className="flex flex-col items-center gap-4">
             {profile ? (
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2">
