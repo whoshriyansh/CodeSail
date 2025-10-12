@@ -1,0 +1,9 @@
+.vscode
+node_modules
+webview-ui/node_modules
+*.log
+.env
+webview-ui/.env
+webview-ui/vite.config.ts
+webview-ui/tsconfig.json
+webview-ui/eslint.config.js

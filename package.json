@@ -1,0 +1,82 @@
+{
+  "name": "codesail",
+  "displayName": "CodeSail",
+  "publisher": "codesail",
+  "description": "Extension made by reverse engineering the Traycer AI Extension",
+  "version": "0.0.2",
+  "icon": "./src/icons/codesail_app.png",
+  "keywords": [
+    "Extension",
+    "AI"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/whoshriyansh/CodeSail"
+  },
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onView:codesailView"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "codesailSidebar",
+          "title": "CodeSail",
+          "icon": "./src/icons/codesail_app.png"
+        }
+      ]
+    },
+    "views": {
+      "codesailSidebar": [
+        {
+          "id": "codesailView",
+          "name": "CodeSail View",
+          "type": "webview",
+          "icon": "./src/icons/codesail_app.png"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "codesail.authenticate",
+        "title": "Authenticate with GitHub"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "npm run compile && npm run build-webview",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "build-webview": "cd webview-ui && npm run build",
+    "pretest": "npm run build && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "dev": "cross-env NODE_ENV=development concurrently \"npm:watch\" \"npm:dev-webview\"",
+    "dev-webview": "cd webview-ui && npm run dev"
+  },
+  "dependencies": {
+    "axios": "^1.7.7",
+    "groq-sdk": "^0.7.0"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^22.7.4",
+    "@types/vscode": "^1.93.0",
+    "@typescript-eslint/eslint-plugin": "^8.10.0",
+    "@typescript-eslint/parser": "^8.10.0",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "concurrently": "^9.2.1",
+    "cross-env": "^10.1.0",
+    "eslint": "^9.13.0",
+    "typescript": "^5.6.3"
+  }
+}

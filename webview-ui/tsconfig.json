@@ -1,0 +1,31 @@
+/**I was having problem in ts config file so here is detailed explanation and all for my future referance
+ *The main purpose for this ts config is to be a good file for node js env and also vs code extenion so setting will be different from the web project
+ */
+
+{
+  "compilerOptions": {
+    //Options
+    //strict true allows you to on every setting in the type check main purpose of this is to make run time errors to a compiler errors
+    "strict": true,
+
+    //Module is a option to
+    "module": "commonjs",
+    "target": "esnext",
+
+    "sourceMap": true,
+
+    "allowJs": true,
+
+    "outDir": "out", // Output directory for compiled JavaScript
+    "rootDir": "src", // Root directory of your TypeScript source files
+    "esModuleInterop": true, // Enables `allowSyntheticDefaultImports` for CommonJS modules
+    "resolveJsonModule": true, // Allow importing .json files
+    "skipLibCheck": true, // Skip type checking of declaration files
+
+    "declaration": true, // Generate declaration files (.d.ts) for your modules
+    "declarationMap": true // Generate source maps for declaration files
+  },
+
+  "include": ["src/**/*.ts", "images.d.ts"], // Include all .ts files in the src directory
+  "exclude": ["node_modules", "dist"] // Exclude node_modules and test environments
+}

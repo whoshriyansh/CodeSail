@@ -1,0 +1,26 @@
+# Node modules
+node_modules/
+webview-ui/node_modules/
+
+# Build outputs
+out/
+dist/
+webview-ui/build/
+webview-ui/dist/
+
+# VS Code extension packaging
+.vscode-test/
+.vscode/
+
+# Logs
+*.log
+
+# Environment / secrets
+.env
+webview-ui/.env
+.env.local
+webview-ui/.env.local
+
+# OS files
+.DS_Store
+Thumbs.db
