@@ -1,32 +1,63 @@
-# CodeSail
+# CodeSail: Simplified Planning Layer for Coding Agents
 
-CodeSail is a Visual Studio Code extension that provides an AI-powered code assistant through a sleek sidebar webview. Powered by the groq-sdk, it offers intelligent code suggestions and assistance, with a modern React-based UI styled with Tailwind CSS. Securely store your Grok API key and interact with the assistant directly within VS Code.
+This is a **simplified recreation of Traycer AI** as a VS Code extension, demonstrating the core "planning layer" concept. CodeSail acts as an intelligent orchestrator for coding agents: it analyzes your codebase, breaks tasks into structured, step-by-step plans, and generates actionable fixes/suggestions. This clone uses Groq AI (via `llama-3.1-8b-instant`) as the underlying agent to mimic this—providing precise planning before code changes, ensuring reliable, auditable outputs.
+
+Built in **TypeScript** with a **React-based webview UI** (styled with Tailwind CSS), it integrates seamlessly into VS Code. No backend required—API keys are stored securely via VS Code's `SecretStorage`.
+
+## Why This Captures Traycer's Vision
+
+- **Agent Integration**: Uses Groq as the "coding agent" for analysis/planning; extensible to Claude/Cursor.
+- **Verification & Review**: Outputs include issues (with severity), suggestions, fixed code, and change summaries—mirroring Traycer's auditability.
+- **Creativity**: Sidebar webview for interactive planning; secure per-user Grok key storage; async streaming for real-time feedback.
+- **Ease of Use**: One-click file selection + prompt → Instant plan/fixes in VS Code.
+
+This is a minimal, focused implementation to showcase builder thinking: Clean, modular code (Node.js extension + React UI) that works on large codebases without over-engineering.
 
 ## Features
 
-AI-Powered Assistance: Leverage the groq-sdk to get intelligent code suggestions and insights.
-Interactive Sidebar Webview: A responsive React-based interface for seamless interaction.
-
-Toggle between light and dark themes to match your VS Code environment.
-Modern UI with Tailwind CSS and components like buttons and cards.
-
-Secure API Key Storage: Safely store your Grok API key using VS Code’s SecretStorage.
-Command Integration: Use the CodeSail: Set Grok API Key command to configure your API key.
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+- **AI Code Planning & Analysis**: Upload code + task (e.g., "Fix auth bug") → Groq generates step-by-step plan, issues, suggestions, and fixed code.
+- **Structured Output**:
+  - **Thinking Phase**: [STEP 1-6] reasoning.
+  - **Final Plan**: Markdown with walkthrough, issues (Low/Med/High), suggestions, full fixed code, and diff summary.
+- **Secure Grok Integration**: Prompt for API key on first use; stored encrypted (no exposure).
+- **GitHub Auth**: Optional login for user profile (avatar/email in UI).
+- **Modern UI**: Responsive React sidebar with Tailwind; light/dark theme support; file search/modal.
+- **Streaming Responses**: Real-time chunks for fast, interactive feedback.
 
 ## Requirements
 
-To use CodeSail, you need:
+- **VS Code**: v1.93.0+.
+- **Grok API Key**: Free from [console.ai](https://console.groq.com/keys) (powers the planning agent).
+- **Node.js**: v20+ (for local dev/build).
 
-Visual Studio Code: Version 1.93.0 or higher.
-Grok API Key: Obtain from xAI to enable AI features.
-Node.js: Version 20.x for building the extension (if developing locally).
+## Installation & Setup
 
-### 1.0.0
+1. **Install Extension**:
 
-Initial release of ...
+   - Search "CodeSail" in VS Code Extensions view (`Ctrl+Shift+X`).
+   - Install and reload VS Code.
 
-### 1.0.1
+2. **Configure Grok API Key**:
 
-**Enjoy!**
+   - Open the CodeSail sidebar (activity bar icon).
+   - Click user icon (bottom footer) → "Submit Grok API Key".
+   - Enter key from [console.ai](https://console.groq.com/keys) → Saved securely (no re-entry needed).
+
+3. **Optional: GitHub Login**:
+
+   - In sidebar footer → "Sign In with GitHub" → Authorize in browser.
+   - Shows your profile in the UI.
+
+4. **Usage**:
+   - Open CodeSail sidebar.
+   - Search/select a file (excludes node_modules/.git).
+   - Enter task prompt (e.g., "Add login validation").
+   - Click "Send" → Watch planning stream: Steps → Final plan/fixes.
+   - Copy fixed code or apply changes manually.
+
+## Changelog
+
+**0.0.2 (2025-10-13)**
+
+- Bundled deps for reliable publishing.
+- Enhanced planning output for better agent integration.

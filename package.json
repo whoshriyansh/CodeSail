@@ -1,13 +1,17 @@
 {
   "name": "codesail",
   "displayName": "CodeSail",
-  "publisher": "codesail",
-  "description": "Extension made by reverse engineering the Traycer AI Extension",
-  "version": "0.0.2",
+  "publisher": "ws-codesail",
+  "description": "Simplified Traycer AI: A planning layer for coding agents—analyze code, generate step-by-step plans, and suggest fixes with Groq AI.",
+  "version": "0.0.1",
   "icon": "./src/icons/codesail_app.png",
   "keywords": [
-    "Extension",
-    "AI"
+    "AI",
+    "coding agent",
+    "planning layer",
+    "code analysis",
+    "reverse engineering",
+    "Traycer"
   ],
   "repository": {
     "type": "git",
@@ -46,9 +50,10 @@
   },
   "scripts": {
     "vscode:prepublish": "npm run build",
-    "build": "npm run compile && npm run build-webview",
+    "build": "npm run bundle:extension && npm run build-webview",
+    "bundle:extension": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --target=es2020 --sourcemap",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./",
+    "watch": "esbuild src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --target=es2020 --watch",
     "build-webview": "cd webview-ui && npm run build",
     "pretest": "npm run build && npm run lint",
     "lint": "eslint src",
@@ -70,6 +75,7 @@
     "@vscode/test-electron": "^2.5.2",
     "concurrently": "^9.2.1",
     "cross-env": "^10.1.0",
+    "esbuild": "^0.25.10",
     "eslint": "^9.13.0",
     "typescript": "^5.6.3"
   }

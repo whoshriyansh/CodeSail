@@ -1,3 +1,7 @@
+# For my Google Referance
+
+Just a cheat sheet for me to see some google refernace related to view and how good google search I can make because I'm trying to get mostly unknown answers from google rather than AI.
+
 Google Serach for knowing how to enable sidebar web view
 `how to make a vscode extension that open in sidebar`
 

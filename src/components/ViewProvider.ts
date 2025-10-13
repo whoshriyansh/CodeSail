@@ -1,5 +1,4 @@
 import * as vscode from "vscode";
-import * as path from "path";
 import { listAllWorkspaceFiles, readFileContent } from "../extension";
 import { getIconForExtension } from "../utils/getIconForExtension";
 import { streamDeepSeekAnalysis } from "../api/CodeAnalysis/CodeAnalysis";
@@ -9,13 +8,13 @@ export class ViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewId = "codesailView";
 
   private _webview?: vscode.Webview;
-  private readonly _context: vscode.ExtensionContext; // Add context
+  private readonly _context: vscode.ExtensionContext;
 
   constructor(
     private readonly _extensionUri: vscode.Uri,
-    context: vscode.ExtensionContext // Add context parameter
+    context: vscode.ExtensionContext
   ) {
-    this._context = context; // Store context
+    this._context = context;
   }
 
   public async sendAuthRequest() {
@@ -169,7 +168,7 @@ export class ViewProvider implements vscode.WebviewViewProvider {
             };
 
             await axios.post(
-              "http://localhost:8001/api/auth/register",
+              "https://codesail-server.vercel.app/api/auth/register",
               userDataForBackend
             );
 
