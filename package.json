@@ -58,8 +58,7 @@
     "pretest": "npm run build && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
-    "dev": "cross-env NODE_ENV=development concurrently \"npm:watch\" \"npm:dev-webview\"",
-    "dev-webview": "cd webview-ui && npm run dev"
+    "dev": "npm run build-webview && npm run compile"
   },
   "dependencies": {
     "axios": "^1.7.7",

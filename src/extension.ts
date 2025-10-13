@@ -1,8 +1,6 @@
 import * as vscode from "vscode";
 import * as fs from "fs/promises";
-import { ViewProvider } from "./components/ViewProvider";
-import { Groq } from "groq-sdk";
-import axios, { AxiosError } from "axios";
+import { createViewProvider } from "./webview/ViewProvider";
 
 export async function listAllWorkspaceFiles() {
   const excludePatterns = "**/{node_modules,dist,build,.git,.*}/**";
@@ -38,18 +36,9 @@ export async function readFileContent(filePath: string) {
 }
 
 export function activate(context: vscode.ExtensionContext) {
-  console.log('Congratulations, your extension "codesail" is now active!');
-
-  const provider = new ViewProvider(context.extensionUri, context); // Pass context
+  const provider = createViewProvider(context.extensionUri, context);
   context.subscriptions.push(
-    vscode.window.registerWebviewViewProvider(ViewProvider.viewId, provider)
-  );
-
-  // Register the authenticate command
-  context.subscriptions.push(
-    vscode.commands.registerCommand("codesail.authenticate", async () => {
-      provider.sendAuthRequest();
-    })
+    vscode.window.registerWebviewViewProvider(provider.viewId, provider)
   );
 }
 
