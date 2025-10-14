@@ -1,5 +1,7 @@
 # CodeSail: Simplified Planning Layer for Coding Agents
 
+loom.com/share/752aa7884c304b609b71b37e75e8ab74
+
 This is a **simplified recreation of Traycer AI** as a VS Code extension, demonstrating the core "planning layer" concept. CodeSail acts as an intelligent orchestrator for coding agents: it analyzes your codebase, breaks tasks into structured, step-by-step plans, and generates actionable fixes/suggestions. This clone uses Groq AI (via `llama-3.1-8b-instant`) as the underlying agent to mimic this—providing precise planning before code changes, ensuring reliable, auditable outputs.
 
 Built in **TypeScript** with a **React-based webview UI** (styled with Tailwind CSS), it integrates seamlessly into VS Code. No backend required—API keys are stored securely via VS Code's `SecretStorage`.
