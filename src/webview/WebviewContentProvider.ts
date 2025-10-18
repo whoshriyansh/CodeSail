@@ -23,7 +23,7 @@ export function getWebviewContent(
       "index.css"
     )
   );
-  const cspSource = `default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} https:; connect-src http://localhost:8001;`;
+  const cspSource = `default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-inline'; img-src ${webview.cspSource} https:; connect-src http://localhost:8001 http://localhost:11434;`;
 
   return `<!DOCTYPE html>
     <html lang="en">

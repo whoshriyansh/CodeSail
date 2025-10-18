@@ -27,13 +27,12 @@ const Input: FunctionComponent<InputProps> = ({
       readOnly={readOnly}
       onClick={onClick}
       className={twMerge(
-        "flex-1 p-2 border border-solid rounded-md bg-[var(--vscode-input-background)] text-[var(--vscode-input-foreground)] shadow-md ",
+        "w-full p-2 text-[var(--vscode-input-foreground)] rounded-md shadow-md focus:outline-none",
         className
       )}
     />
   );
 };
-
 interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
   value: string;
   onChange: (event: React.ChangeEvent<HTMLSelectElement>) => void;
@@ -81,7 +80,7 @@ const FormButton: React.FC<FormButtonProps> = ({
   return (
     <button
       onClick={onClick}
-      className={`border border-solid px-1 py-0.5 rounded-md cursor-pointer hover:scale-105 transition-all duration-300 ${className}`}
+      className={`text-xs border border-solid px-1 py-0.5 rounded-md cursor-pointer hover:scale-105 transition-all duration-300 ${className}`}
       style={{
         backgroundColor: "var(--vscode-button-background)",
         color: "var(--vscode-button-foreground)",

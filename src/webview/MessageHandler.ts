@@ -1,8 +1,7 @@
 // src/webview/MessageHandler.ts
 import * as vscode from "vscode";
 import { getWorkspaceFiles, readFile } from "../utils/FileOperations";
-import { createApiKeyManager } from "../utils/ApiKeyManager";
-import { authenticateGitHub, UserProfile } from "../auth/GitHubAuthHandler";
+import { authenticateGitHub } from "../auth/GitHubAuthHandler";
 import { createCodeAnalysisService } from "../services/CodeAnalysisService";
 
 interface Message {
@@ -12,7 +11,7 @@ interface Message {
 
 export function createMessageHandler(context: vscode.ExtensionContext) {
   let webview: vscode.Webview | undefined;
-  const apiKeyManager = createApiKeyManager(context);
+
   const analysisService = createCodeAnalysisService();
 
   function setWebview(newWebview: vscode.Webview) {
@@ -27,6 +26,15 @@ export function createMessageHandler(context: vscode.ExtensionContext) {
         case "fetchdata":
           const files = await getWorkspaceFiles();
           webview.postMessage({ command: "all-files", data: files });
+          break;
+
+        case "user-status":
+          const userProfileFromLocalStorage =
+            context.globalState.get("userProfile");
+          webview.postMessage({
+            command: "profileFromLocalStorage",
+            data: userProfileFromLocalStorage,
+          });
           break;
 
         case "Analyse File":
@@ -45,43 +53,20 @@ export function createMessageHandler(context: vscode.ExtensionContext) {
           const code = await readFile(message.data.filePath);
           if (!code) return;
 
-          const apiKey = await apiKeyManager.getApiKey();
-          if (!apiKey) {
-            webview.postMessage({
-              command: "error",
-              text: "Grok API key not configured. Please submit your key.",
-            });
-            return;
-          }
-
-          await analysisService.analyzeCode(
-            code,
-            message.data.prompt,
-            apiKey,
-            (chunk) =>
-              webview!.postMessage({ command: "analysisChunk", data: chunk }),
-            (error) =>
-              webview!.postMessage({
-                command: error ? "error" : "analysisComplete",
-                text: error,
-              })
-          );
+          // Trigger streaming analysis
+          await analysisService.analyzeCode(code, message.data.prompt);
           break;
 
-        case "Github Authentication":
+        case "github-authentication":
+          //We are waiting for the profile from the Autheticate function
           const userProfile = await authenticateGitHub();
+
+          context.globalState.update("userProfile", userProfile);
+          //We are sending the profile to the frontend
           webview.postMessage({ command: "userProfile", data: userProfile });
           vscode.window.showInformationMessage(
             "Successfully authenticated with GitHub!"
           );
-          break;
-
-        case "Submit Grok Key":
-          await apiKeyManager.saveApiKey();
-          webview.postMessage({
-            command: "keySaved",
-            text: "Grok API key saved successfully!",
-          });
           break;
 
         default:

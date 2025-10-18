@@ -1,6 +1,11 @@
-// src/auth/GitHubAuthHandler.ts
 import * as vscode from "vscode";
 import axios from "axios";
+
+//First get the user
+//Save the user in local storage
+//Add useEffect in the frontend so that it can request oin the go
+//Show the UI of login, if not logged in.
+//Show the UI is we have the user.
 
 export interface UserProfile {
   avatar_url: string;
@@ -29,6 +34,8 @@ export async function authenticateGitHub(): Promise<UserProfile> {
       },
     });
 
+    console.log("This is the Gihub User Data", data);
+
     const userDataForBackend = {
       githubId: data.id,
       username: data.login,
@@ -38,7 +45,7 @@ export async function authenticateGitHub(): Promise<UserProfile> {
     };
 
     await axios.post(
-      "https://codesail-server.vercel.app/api/auth/register",
+      "http://localhost:8001/api/auth/register",
       userDataForBackend
     );
 

@@ -1,4 +1,3 @@
-// src/services/CodeAnalysisService.ts
 import * as vscode from "vscode";
 import { streamDeepSeekAnalysis } from "../api/CodeAnalysis/CodeAnalysis";
 
@@ -9,37 +8,17 @@ export function createCodeAnalysisService() {
     webview = newWebview;
   }
 
-  async function analyzeCode(
-    code: string,
-    prompt: string,
-    apiKey: string,
-    onChunk: (chunk: any) => void,
-    onComplete: (error?: string) => void
-  ): Promise<void> {
+  async function analyzeCode(code: string, prompt: string) {
     if (!webview) throw new Error("Webview not initialized");
     try {
-      webview.postMessage({ command: "analysisStart" });
-      await streamDeepSeekAnalysis(
-        code,
-        prompt,
-        apiKey,
-        (chunk) => {
-          onChunk({
-            ...chunk,
-            prompt,
-          });
-        },
-        (error) => {
-          if (error) {
-            onComplete(error);
-          } else {
-            onComplete();
-            webview!.postMessage({ command: "analysisComplete" });
-          }
-        }
-      );
+      // Send "thinking" status to frontend
+      webview.postMessage({ command: "analysisStart", text: "Thinking..." });
+
+      // Start streaming analysis
+      await streamDeepSeekAnalysis(code, prompt, webview);
     } catch (error) {
-      throw new Error(`Analysis error: ${String(error)}`);
+      const msg = error instanceof Error ? error.message : String(error);
+      webview.postMessage({ command: "error", text: `Analysis error: ${msg}` });
     }
   }
 

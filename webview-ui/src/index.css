@@ -14,7 +14,7 @@ html {
   font-size: var(--vscode-font-size);
   font-weight: var(--vscode-font-weight);
   font-family: var(--vscode-font-family);
-  background-color: var(--vscode-background);
+  background-color: var(--vscode-sidebar);
 }
 
 ol,
@@ -55,7 +55,10 @@ button:focus {
   outline-color: var(--vscode-focusBorder);
 }
 
-input:not([type="checkbox"]),
+input {
+  border: 1px solid var(--vscode-input-foreground);
+}
+
 textarea {
   display: block;
   width: 100%;

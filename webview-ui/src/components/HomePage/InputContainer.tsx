@@ -29,32 +29,43 @@ const InputContainer: FunctionComponent<InputContainerProps> = ({
   onSearch,
 }) => {
   return (
-    <div className={twMerge("flex items-center gap-2 mt-auto", className)}>
-      {fileModalOpen ? (
-        <Input
-          value={searchTerm}
-          onChange={(e) => onSearch(e.target.value)}
-          placeholder="Search for File"
-          className="mb-2"
-        />
-      ) : selectedFile ? (
-        <Input
-          value={selectedFile.name}
-          onClick={onFileModalToggle}
-          readOnly
-          className="cursor-pointer"
-        />
-      ) : (
-        <FormButton onClick={onFileModalToggle}>
-          <Plus size={16} />
-        </FormButton>
+    <div
+      className={twMerge(
+        "flex flex-col gap-2 mt-auto bg-[var(--vscode-input-background)] px-2 py-2 rounded-md items-start",
+        className
       )}
-      <Input
-        value={input}
-        onChange={onInputChange}
-        placeholder="Describe task (@mention for context)"
-      />
-      <FormButton onClick={onSend}>Send</FormButton>
+    >
+      <div>
+        {fileModalOpen ? (
+          <Input
+            value={searchTerm}
+            onChange={(e) => onSearch(e.target.value)}
+            placeholder="Search for File"
+            className="mb-2"
+          />
+        ) : selectedFile ? (
+          <Input
+            value={selectedFile.name}
+            onClick={onFileModalToggle}
+            readOnly
+            className="cursor-pointer"
+          />
+        ) : (
+          <FormButton onClick={onFileModalToggle}>
+            <Plus size={16} />
+          </FormButton>
+        )}
+      </div>
+      <div className="flex gap-2 items-center w-full">
+        <div className="flex-1">
+          <Input
+            value={input}
+            onChange={onInputChange}
+            placeholder="Describe task (@mention for context)"
+          />
+        </div>
+        <FormButton onClick={onSend}>Send</FormButton>
+      </div>
     </div>
   );
 };

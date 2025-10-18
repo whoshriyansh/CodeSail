@@ -25,7 +25,7 @@ const FileModal: FunctionComponent<FileModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       className={twMerge(
-        "left-5 bottom-28 max-h-[30vh] w-3/4 md:w-2/4 flex flex-col gap-2 z-40",
+        "left-3.5 bottom-32 max-h-[30vh] w-3/4 md:w-2/4 flex flex-col gap-2 z-40",
         className
       )}
     >

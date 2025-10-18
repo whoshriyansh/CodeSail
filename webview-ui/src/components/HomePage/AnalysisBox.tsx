@@ -4,13 +4,19 @@ import { twMerge } from "tailwind-merge";
 import Button from "../ui/button/Button";
 
 interface AnalysisBoxProps {
-  analysisResponse: string[];
+  thinking: string;
+  streamedResponse: string;
+  finalAnswer: string;
+  error: string;
   onClear: () => void;
   className?: string;
 }
 
 const AnalysisBox: FunctionComponent<AnalysisBoxProps> = ({
-  analysisResponse,
+  thinking,
+  streamedResponse,
+  finalAnswer,
+  error,
   onClear,
   className,
 }) => {
@@ -27,9 +33,25 @@ const AnalysisBox: FunctionComponent<AnalysisBoxProps> = ({
           <Cross size={14} /> Clear
         </Button>
       </div>
-      <pre className="text-sm whitespace-pre-wrap">
-        {analysisResponse.join("\n")}
-      </pre>
+      {thinking && (
+        <pre className="text-sm whitespace-pre-wrap text-gray-500 italic">
+          {thinking}
+        </pre>
+      )}
+      {streamedResponse && (
+        <pre className="text-sm whitespace-pre-wrap">{streamedResponse}</pre>
+      )}
+      {finalAnswer && (
+        <div className="p-4 bg-green-100 border border-green-300 rounded-md">
+          <h3 className="text-md font-semibold text-green-800">Final Answer</h3>
+          <pre className="text-sm whitespace-pre-wrap">{finalAnswer}</pre>
+        </div>
+      )}
+      {error && (
+        <pre className="text-sm whitespace-pre-wrap text-red-500">
+          Error: {error}
+        </pre>
+      )}
     </div>
   );
 };

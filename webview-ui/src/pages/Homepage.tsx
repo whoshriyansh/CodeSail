@@ -1,37 +1,32 @@
 import { useState, useEffect, useRef } from "react";
-import type { FilePath, MenuItem } from "../types/Homepage";
-import { initialMenuItems } from "../data/Menu";
+import type { FilePath } from "../types/Homepage";
 import Header from "../components/HomePage/Header";
 import AnalysisBox from "../components/HomePage/AnalysisBox";
-import MenuContainer from "../components/HomePage/MenuContainer";
 import InputContainer from "../components/HomePage/InputContainer";
 import FileModal from "../components/HomePage/FileModal";
-import Footer from "../components/HomePage/Footer";
 import { getVsCodeApi } from "../utils/vscode";
+import Footer from "../components/HomePage/Footer";
 
-interface UserProfile {
-  avatar_url: string;
-  email: string;
-  username: string;
-  accessToken?: string;
-}
+//Make a function to make api call
+//Add it to run initially
+//Send the profile to the Footer
 
 const Homepage = () => {
   const [input, setInput] = useState("");
-  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
-  const [selectedMenu, setSelectedMenu] = useState<number | null>(null);
   const [selectedFile, setSelectedFile] = useState<FilePath | null>(null);
   const [fileModalOpen, setFileModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [profileModelOpen, setProfileModelOpen] = useState(false);
-  const [analysisResponse, setAnalysisResponse] = useState<string[]>([]);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [thinking, setThinking] = useState("");
+  const [streamedResponse, setStreamedResponse] = useState("");
+  const [finalAnswer, setFinalAnswer] = useState("");
+  const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [keyStatus, setKeyStatus] = useState<string | null>(null); // New state for key submission feedback
   const vscodeRef = useRef(getVsCodeApi());
   const allFilesRef = useRef<FilePath[]>([]);
   const [displayedFiles, setDisplayedFiles] = useState<FilePath[]>([]);
+  const [userProfile, setUserProfile] = useState(null);
 
+  // Toggle file modal and show initial files
   const handleFileModalTogl = () => {
     setFileModalOpen((prev) => !prev);
     if (!fileModalOpen && allFilesRef.current.length) {
@@ -39,16 +34,14 @@ const Homepage = () => {
     }
   };
 
-  const handleProfileModalTogl = () => {
-    setProfileModelOpen((prev) => !prev);
-  };
-
+  // Select a file and close modal
   const handleSelectFile = (file: FilePath) => {
     setSelectedFile(file);
     setFileModalOpen(false);
     setSearchTerm("");
   };
 
+  // Filter files based on search term
   const handleSearch = (value: string) => {
     setSearchTerm(value);
     const filtered = allFilesRef.current.filter((file) =>
@@ -60,25 +53,26 @@ const Homepage = () => {
     }
   };
 
+  // Clear analysis results
   const handleClearAnalysis = () => {
-    setAnalysisResponse([]);
-    setSelectedMenu(null);
-    setMenuItems(initialMenuItems);
+    setThinking("");
+    setStreamedResponse("");
+    setFinalAnswer("");
+    setError("");
   };
 
-  const sendMessageToExtension = (
-    command: string = "fetchdata",
-    data?: any
-  ) => {
+  // Send message to backend
+  const sendMessageToExtension = (command: string, data?: any) => {
     vscodeRef.current.postMessage({ command, data });
   };
 
+  // Send analysis request
   const sendForAnlyses = () => {
     if (input.trim() === "" || !selectedFile) return;
     const path = selectedFile?.path;
     const name = selectedFile?.name;
 
-    setAnalysisResponse([]);
+    handleClearAnalysis();
     setIsLoading(true);
     sendMessageToExtension("Analyse File", {
       fileName: name,
@@ -87,81 +81,66 @@ const Homepage = () => {
     });
   };
 
-  const sendAuthReq = () => {
+  // Send Github Authetication Request
+  const sendForGithubLogin = () => {
     setIsLoading(true);
-    sendMessageToExtension("Github Authentication");
+    sendMessageToExtension("github-authentication");
   };
 
-  const sendKeySubmission = () => {
-    setIsLoading(true);
-    setKeyStatus(null); // Clear previous status
-    sendMessageToExtension("Submit Grok Key");
-  };
-
-  const handleMenuClick = (id: number) => {
-    setSelectedMenu(id);
-    const updatedMenuItems = menuItems.map((item) =>
-      item.id === id
-        ? { ...item, isSelected: true }
-        : { ...item, isSelected: false }
-    );
-    setMenuItems(updatedMenuItems);
-    const selectedItem = menuItems.find((item) => item.id === id);
-    if (selectedItem) sendMessageToExtension(selectedItem.value);
-  };
-
+  // Handle messages from backend
   useEffect(() => {
-    sendMessageToExtension();
+    sendMessageToExtension("fetchdata");
+    sendMessageToExtension("user-status");
 
     const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-      switch (message.command) {
+      const { command, text } = event.data;
+      switch (command) {
         case "all-files": {
-          allFilesRef.current = message.data;
-          setDisplayedFiles(message.data.slice(0, 15));
+          allFilesRef.current = event.data.data;
+          setDisplayedFiles(event.data.data.slice(0, 15));
           break;
         }
-        case "error": {
-          console.error("Error from extension:", message.text);
+        case "analysisStart": {
+          setThinking(text);
+          setIsLoading(true);
+          break;
+        }
+        case "thinkingStart": {
+          setThinking("Starting analysis...");
+          break;
+        }
+        case "thinking": {
+          setThinking((prev) => prev + text);
+          break;
+        }
+        case "streamStart": {
+          setThinking("");
+          setStreamedResponse("");
+          break;
+        }
+        case "stream": {
+          setStreamedResponse((prev) => prev + text);
+          break;
+        }
+        case "final": {
+          setFinalAnswer(text);
+          setStreamedResponse("");
           setIsLoading(false);
-          setKeyStatus(message.text); // Show error in UI
           break;
         }
-        case "analysisChunk": {
-          setAnalysisResponse((prev) => [...prev, message.data.content]);
-          break;
-        }
-        case "analysisComplete": {
-          setIsLoading(false);
+        case "profileFromLocalStorage": {
+          setUserProfile(event.data.data);
           break;
         }
         case "userProfile": {
-          setUserProfile({
-            ...message.data,
-            accessToken: message.data.accessToken || undefined,
-          });
-          setIsLoading(false);
+          setUserProfile(event.data.data);
           break;
         }
-        case "signedOut": {
-          setUserProfile(null);
-          setIsLoading(false);
-          break;
-        }
-        case "File Recived": {
-          console.log("Analysed File Successful", message.data);
-          break;
-        }
-        case "Plan":
-        case "Review": {
-          console.log(
-            `Received response for ${message.command}:`,
-            message.data
-          );
-          break;
-        }
-        case "keySaved": {
-          setKeyStatus("Grok API key saved successfully!");
+        case "error": {
+          setError(text);
+          setThinking("");
+          setStreamedResponse("");
+          setFinalAnswer("");
           setIsLoading(false);
           break;
         }
@@ -173,50 +152,47 @@ const Homepage = () => {
   }, []);
 
   return (
-    <div className="flex flex-col px-2 py-2 overflow-y-hidden h-[100vh]">
-      <Header
-        title="What can I help you build today?"
-        subtitle="Create new code, add features, or fix issues—let's make it happen."
-      />
-      {analysisResponse.length > 0 ? (
-        <AnalysisBox
-          analysisResponse={analysisResponse}
-          onClear={handleClearAnalysis}
-        />
+    <>
+      {!userProfile ? (
+        <>
+          <div>No, User Profile</div>
+          <button onClick={sendForGithubLogin}>Sign In</button>
+        </>
       ) : (
-        <MenuContainer
-          menuItems={menuItems}
-          selectedMenu={selectedMenu}
-          onMenuClick={handleMenuClick}
-        />
+        <div className="flex flex-col px-2 py-2 overflow-y-hidden h-[100vh]">
+          <Header
+            title="What can I help you build today?"
+            subtitle="Create new code, add features, or fix issues—let's make it happen."
+          />
+          {(thinking || streamedResponse || finalAnswer || error) && (
+            <AnalysisBox
+              thinking={thinking}
+              streamedResponse={streamedResponse}
+              finalAnswer={finalAnswer}
+              error={error}
+              onClear={handleClearAnalysis}
+            />
+          )}
+          <InputContainer
+            fileModalOpen={fileModalOpen}
+            selectedFile={selectedFile}
+            input={input}
+            onFileModalToggle={handleFileModalTogl}
+            onInputChange={(e) => setInput(e.target.value)}
+            onSend={sendForAnlyses}
+            searchTerm={searchTerm}
+            onSearch={handleSearch}
+          />
+          <FileModal
+            isOpen={fileModalOpen}
+            onClose={handleFileModalTogl}
+            files={displayedFiles}
+            onSelectFile={handleSelectFile}
+          />
+          <Footer onSignIn={sendForGithubLogin} profile={userProfile} />
+        </div>
       )}
-      <InputContainer
-        fileModalOpen={fileModalOpen}
-        selectedFile={selectedFile}
-        input={input}
-        onFileModalToggle={handleFileModalTogl}
-        onInputChange={(e) => setInput(e.target.value)}
-        onSend={sendForAnlyses}
-        searchTerm={searchTerm}
-        onSearch={handleSearch}
-      />
-      <FileModal
-        isOpen={fileModalOpen}
-        onClose={handleFileModalTogl}
-        files={displayedFiles}
-        onSelectFile={handleSelectFile}
-      />
-      <Footer
-        userStatus={userProfile ? "Pro (Authenticated)" : "Guest"}
-        isOpen={profileModelOpen}
-        onClose={handleProfileModalTogl}
-        profile={userProfile}
-        onSignIn={sendAuthReq}
-        isLoading={isLoading}
-        sendKeySubmission={sendKeySubmission}
-        keyStatus={keyStatus} // Pass key status to Footer
-      />
-    </div>
+    </>
   );
 };
 
