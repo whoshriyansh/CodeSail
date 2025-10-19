@@ -14,7 +14,6 @@ export function createCodeAnalysisService() {
       throw new Error("Webview not initialized");
     }
 
-    console.log("Starting code analysis with prompt:", prompt);
     webview.postMessage({
       command: "analysisStart",
       data: { text: "Starting code analysis..." },
@@ -22,7 +21,6 @@ export function createCodeAnalysisService() {
 
     try {
       const response = await streamDeepSeekAnalysis(code, prompt);
-      console.log("Received response from streamDeepSeekAnalysis:", response);
 
       // Send the final response directly
       webview.postMessage({
@@ -37,8 +35,6 @@ export function createCodeAnalysisService() {
         text: `Analysis failed: ${message}`,
       });
     }
-
-    console.log("Response sent to webview");
   }
 
   return { setWebview, analyzeCode };

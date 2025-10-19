@@ -113,7 +113,6 @@ If the task is unclear, include a top-level **clarification** field in the JSON 
 
 Now, based on the provided codebase and task, generate the implementation in the specified JSON format.`;
 
-  console.log("Starting streamDeepSeekAnalysis with prompt:");
   const stream = await ollama.chat({
     model: "qwen2.5-coder",
     messages: [
@@ -122,7 +121,6 @@ Now, based on the provided codebase and task, generate the implementation in the
     ],
     stream: false,
   });
-  console.log("These are response", stream);
 }
 
 streamDeepSeekAnalysis();

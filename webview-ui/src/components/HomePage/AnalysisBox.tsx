@@ -1,5 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnalysisResponse, ThinkingStep } from "../../types/Homepage";
+import { FormButton } from "../ui/formFields/FormFields";
+import { Card, CardDescription, CardHeader, CardTitle } from "../ui/card/Card";
+import { Clipboard, Check } from "lucide-react";
 
 interface AnalysisBoxProps {
   thinkingSteps: ThinkingStep[];
@@ -17,6 +20,7 @@ const AnalysisBox = ({
   isLoading,
 }: AnalysisBoxProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [copiedStates, setCopiedStates] = useState<boolean[]>([]);
 
   // Scroll to bottom when content updates
   useEffect(() => {
@@ -25,41 +29,73 @@ const AnalysisBox = ({
     }
   }, [thinkingSteps, finalAnswer, error, isLoading]);
 
-  // Extract language and content from code block
-  const extractCodeContent = (
-    content: string
-  ): { language: string; code: string } => {
-    const match = content.match(/```(\w+)?\n([\s\S]*?)\n```/);
-    if (match) {
-      return { language: match[1] || "plaintext", code: match[2] };
+  // Initialize copied states when file_changes updates
+  useEffect(() => {
+    if (finalAnswer?.file_changes) {
+      setCopiedStates(new Array(finalAnswer.file_changes.length).fill(false));
     }
-    return { language: "plaintext", code: content };
+  }, [finalAnswer?.file_changes]);
+
+  // Extract language from file path and return content
+  const extractCodeContent = (
+    content: string,
+    filePath: string
+  ): { language: string; code: string } => {
+    const extension = filePath.split(".").pop()?.toLowerCase() || "plaintext";
+    const languageMap: { [key: string]: string } = {
+      ts: "typescript",
+      js: "javascript",
+      py: "python",
+      json: "json",
+      css: "css",
+      html: "html",
+    };
+    const language = languageMap[extension] || "plaintext";
+    return { language, code: content };
+  };
+
+  // Handle copy to clipboard
+  const handleCopy = (code: string, index: number) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopiedStates((prev) => {
+        const newStates = [...prev];
+        newStates[index] = true;
+        return newStates;
+      });
+      setTimeout(() => {
+        setCopiedStates((prev) => {
+          const newStates = [...prev];
+          newStates[index] = false;
+          return newStates;
+        });
+      }, 5000);
+    });
   };
 
   return (
-    <div className="flex-1 bg-[var(--vscode-editor-background)] border border-[var(--vscode-panel-border)] rounded-md p-4 mb-4 overflow-y-auto">
-      <div className="flex justify-between items-center mb-2">
-        <h2 className="text-lg font-semibold text-[var(--vscode-foreground)]">
+    <div className="h-full bg-[var(--vscode-editor-background)] p-4 rounded-lg shadow-sm overflow-y-auto">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold text-[var(--vscode-foreground)] tracking-tight">
           Analysis Results
         </h2>
-        <button
+        <FormButton
           onClick={onClear}
-          className="px-2 py-1 bg-[var(--vscode-button-background)] text-[var(--vscode-button-foreground)] rounded-md hover:bg-[var(--vscode-button-hoverBackground)] transition"
+          className="px-4 py-2 bg-[var(--vscode-button-background)] text-[var(--vscode-button-foreground)] rounded-md hover:bg-[var(--vscode-button-hoverBackground)] transition-colors duration-200"
         >
           Clear
-        </button>
+        </FormButton>
       </div>
-      <div ref={scrollRef} className="max-h-[50vh] overflow-y-auto">
+      <div ref={scrollRef} className="overflow-y-auto space-y-4">
         {isLoading && (
-          <div className="flex justify-center items-center py-4">
+          <div className="flex justify-center items-center py-6">
             <svg
-              className="animate-spin h-8 w-8 text-[var(--vscode-foreground)]"
+              className="animate-spin h-10 w-10 text-[var(--vscode-foreground)] opacity-80"
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
               viewBox="0 0 24 24"
             >
               <circle
-                className="opacity-25"
+                className="opacity-20"
                 cx="12"
                 cy="12"
                 r="10"
@@ -67,7 +103,7 @@ const AnalysisBox = ({
                 strokeWidth="4"
               ></circle>
               <path
-                className="opacity-75"
+                className="opacity-80"
                 fill="currentColor"
                 d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"
               ></path>
@@ -75,24 +111,24 @@ const AnalysisBox = ({
           </div>
         )}
         {error && (
-          <div className="text-[var(--vscode-errorForeground)] p-2">
-            Error: {error}
+          <div className="p-4 bg-[var(--vscode-editorHoverWidget-background)] border-l-4 border-[var(--vscode-errorForeground)] rounded-md text-[var(--vscode-errorForeground)]">
+            <span className="font-semibold">Error:</span> {error}
           </div>
         )}
         {thinkingSteps.length > 0 && (
-          <div className="mb-4">
-            <h3 className="text-md font-medium text-[var(--vscode-foreground)] mb-2">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-[var(--vscode-foreground)]">
               Thinking Steps
             </h3>
             {thinkingSteps.map((step) => (
               <div
                 key={step.step_number}
-                className="mb-2 p-3 bg-[var(--vscode-editorHoverWidget-background)] border border-[var(--vscode-editorHoverWidget-border)] rounded-md"
+                className="p-4 bg-[var(--vscode-input-background)] rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200"
               >
                 <div className="font-semibold text-[var(--vscode-foreground)]">
                   {step.step_number}. {step.step_title}
                 </div>
-                <div className="text-[var(--vscode-descriptionForeground)]">
+                <div className="text-sm text-[var(--vscode-descriptionForeground)] mt-1">
                   {step.step_description}
                 </div>
               </div>
@@ -100,30 +136,30 @@ const AnalysisBox = ({
           </div>
         )}
         {finalAnswer && (
-          <div>
-            <h3 className="text-md font-medium text-[var(--vscode-foreground)] mb-2">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-[var(--vscode-foreground)]">
               Analysis Summary
             </h3>
-            <div className="p-3 bg-[var(--vscode-editorHoverWidget-background)] border border-[var(--vscode-editorHoverWidget-border)] rounded-md mb-4">
-              <div className="font-semibold text-[var(--vscode-foreground)]">
+            <Card className="bg-[var(--vscode-input-background)] shadow-sm hover:shadow-md transition-shadow duration-200">
+              <CardHeader className="font-semibold text-[var(--vscode-foreground)]">
                 Task: {finalAnswer.task_name}
-              </div>
-              <div className="text-[var(--vscode-descriptionForeground)]">
+              </CardHeader>
+              <CardTitle className="px-4 pb-2 text-[var(--vscode-foreground)]">
                 <strong>PR Title:</strong> {finalAnswer.pr_title}
-              </div>
-              <div className="text-[var(--vscode-descriptionForeground)]">
+              </CardTitle>
+              <CardDescription className="px-4 pb-4 text-[var(--vscode-descriptionForeground)]">
                 <strong>PR Description:</strong> {finalAnswer.pr_description}
-              </div>
-            </div>
+              </CardDescription>
+            </Card>
             {finalAnswer.file_changes.length > 0 && (
-              <div>
-                <h3 className="text-md font-medium text-[var(--vscode-foreground)] mb-2">
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-[var(--vscode-foreground)]">
                   File Changes
                 </h3>
                 {finalAnswer.file_changes.map((change, index) => (
                   <div
                     key={index}
-                    className="mb-4 p-3 bg-[var(--vscode-editorHoverWidget-background)] border border-[var(--vscode-editorHoverWidget-border)] rounded-md"
+                    className="p-4 bg-[var(--vscode-input-background)] rounded-lg shadow-sm"
                   >
                     <div className="font-semibold text-[var(--vscode-foreground)]">
                       {change.file_status.charAt(0).toUpperCase() +
@@ -131,26 +167,56 @@ const AnalysisBox = ({
                       File: {change.file_path}
                     </div>
                     {change.file_content && (
-                      <pre className="mt-2 p-2 bg-[var(--vscode-editor-background)] border border-[var(--vscode-editorLineNumber-foreground)] rounded-md overflow-x-auto">
-                        <code className="text-[var(--vscode-editor-foreground)]">
-                          {extractCodeContent(change.file_content).code}
-                        </code>
-                      </pre>
+                      <div className="relative mt-2">
+                        <pre className="p-3 bg-[var(--vscode-editor-background)] rounded-md overflow-x-auto text-sm">
+                          <code className="text-[var(--vscode-editor-foreground)]">
+                            {
+                              extractCodeContent(
+                                change.file_content,
+                                change.file_path
+                              ).code
+                            }
+                          </code>
+                        </pre>
+                        <FormButton
+                          onClick={() =>
+                            handleCopy(
+                              extractCodeContent(
+                                change.file_content,
+                                change.file_path
+                              ).code,
+                              index
+                            )
+                          }
+                          className="absolute top-2 right-2 p-2 bg-[var(--vscode-button-background)] text-[var(--vscode-button-foreground)] rounded-md hover:bg-[var(--vscode-button-hoverBackground)] transition-colors duration-200"
+                          title={
+                            copiedStates[index]
+                              ? "Copied!"
+                              : "Copy to Clipboard"
+                          }
+                        >
+                          {copiedStates[index] ? (
+                            <Check size={16} />
+                          ) : (
+                            <Clipboard size={16} />
+                          )}
+                        </FormButton>
+                      </div>
                     )}
                   </div>
                 ))}
               </div>
             )}
             {finalAnswer.clarification && (
-              <div className="p-3 bg-[var(--vscode-editorHoverWidget-background)] border border-[var(--vscode-editorHoverWidget-border)] rounded-md">
+              <div className="p-4 bg-[var(--vscode-editorHoverWidget-background)] border-l-4 border-[var(--vscode-errorForeground)] rounded-md">
                 <div className="font-semibold text-[var(--vscode-errorForeground)]">
                   Clarification Needed
                 </div>
-                <div className="text-[var(--vscode-descriptionForeground)]">
+                <div className="text-sm text-[var(--vscode-descriptionForeground)] mt-1">
                   {finalAnswer.clarification.message}
                 </div>
                 {finalAnswer.clarification.questions.length > 0 && (
-                  <ul className="list-disc pl-5 text-[var(--vscode-descriptionForeground)]">
+                  <ul className="list-disc pl-6 mt-2 text-sm text-[var(--vscode-descriptionForeground)]">
                     {finalAnswer.clarification.questions.map((q, idx) => (
                       <li key={idx}>{q}</li>
                     ))}

@@ -17,7 +17,6 @@ export function getVsCodeApi(): WebviewApi<unknown> {
   if (typeof window.acquireVsCodeApi === "function") {
     try {
       vscodeApi = window.acquireVsCodeApi();
-      console.log("VS Code API acquired successfully");
       return vscodeApi;
     } catch (e) {
       console.error("Failed to acquire VS Code API:", e);
@@ -30,7 +29,6 @@ export function getVsCodeApi(): WebviewApi<unknown> {
     postMessage: (msg: any) => console.log("Mock postMessage:", msg),
     getState: () => undefined,
     setState: (state: any) => {
-      console.log("Mock setState:", state);
       return state;
     },
   };

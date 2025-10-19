@@ -34,8 +34,6 @@ export async function authenticateGitHub(): Promise<UserProfile> {
       },
     });
 
-    console.log("This is the Gihub User Data", data);
-
     const userDataForBackend = {
       githubId: data.id,
       username: data.login,

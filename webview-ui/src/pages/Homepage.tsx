@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { FilePath } from "../types/Homepage";
 import Header from "../components/HomePage/Header";
 import AnalysisBox from "../components/HomePage/AnalysisBox";
@@ -6,6 +6,13 @@ import InputContainer from "../components/HomePage/InputContainer";
 import FileModal from "../components/HomePage/FileModal";
 import { getVsCodeApi } from "../utils/vscode";
 import Footer from "../components/HomePage/Footer";
+import { FormButton } from "../components/ui/formFields/FormFields";
+import {
+  Card,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../components/ui/card/Card";
 
 interface ThinkingStep {
   step_number: number;
@@ -97,13 +104,14 @@ const Homepage = () => {
 
     setSearchTerm("");
     setSelectedFile(null);
+    setInput("");
   };
 
   // Send Github Authentication Request
-  const sendForGithubLogin = () => {
+  const sendForGithubLogin = useCallback(() => {
     setIsLoading(true);
     sendMessageToExtension("github-authentication");
-  };
+  }, []);
 
   // Handle messages from backend
   useEffect(() => {
@@ -131,7 +139,6 @@ const Homepage = () => {
             setThinkingSteps(parsed.thinking_steps || []);
             setIsLoading(false);
           } catch (e: any) {
-            console.log("Error parsing final response:", e);
             setError("Invalid response format from AI.");
             setIsLoading(false);
           }
@@ -163,45 +170,94 @@ const Homepage = () => {
   return (
     <>
       {!userProfile ? (
-        <div className="flex flex-col items-center justify-center h-[100vh] bg-[var(--vscode-editor-background)] text-[var(--vscode-foreground)]">
-          <div className="text-lg mb-4">No User Profile</div>
-          <button
-            onClick={sendForGithubLogin}
-            className="px-4 py-2 bg-[var(--vscode-button-background)] text-[var(--vscode-button-foreground)] rounded-md hover:bg-[var(--vscode-button-hoverBackground)] transition"
-          >
-            Sign In
-          </button>
+        <div className="flex flex-col items-center justify-center h-[100vh] bg-[var(--vscode-editor-background)] text-[var(--vscode-foreground)] p-6">
+          <Card className="bg-[var(--vscode-input-background)] shadow-sm rounded-lg p-6 max-w-md w-full">
+            <CardTitle className="text-xl font-bold text-[var(--vscode-foreground)]">
+              Welcome to the Code Analysis Extension
+            </CardTitle>
+            <CardDescription className="text-[var(--vscode-descriptionForeground)] space-y-4">
+              <p>
+                To get started, please sign in with your GitHub account. This
+                extension is free to use and requires Ollama with the
+                <code className="text-[var(--vscode-editor-foreground)] bg-[var(--vscode-editor-background)] px-1 rounded">
+                  qwen2.5-coder
+                </code>{" "}
+                model to function.
+              </p>
+              <div>
+                <strong>Setup Instructions:</strong>
+                <ul className="list-disc pl-5 mt-2 space-y-2">
+                  <li>
+                    Install{" "}
+                    <a
+                      href="https://ollama.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--vscode-textLink-foreground)] hover:underline"
+                    >
+                      Ollama
+                    </a>{" "}
+                    on your system.
+                  </li>
+                  <li>
+                    Pull the{" "}
+                    <code className="text-[var(--vscode-editor-foreground)] bg-[var(--vscode-editor-background)] px-1 rounded">
+                      qwen2.5-coder
+                    </code>{" "}
+                    model using the command:{" "}
+                    <code className="text-[var(--vscode-editor-foreground)] bg-[var(--vscode-editor-background)] px-1 rounded">
+                      ollama pull qwen2.5-coder
+                    </code>
+                  </li>
+                  <li>Run Ollama to enable code analysis.</li>
+                  <li>Sign in below to start using the extension for free!</li>
+                </ul>
+              </div>
+            </CardDescription>
+            <div className="mt-6 flex justify-center">
+              <FormButton
+                onClick={sendForGithubLogin}
+                className="px-6 py-2 bg-[var(--vscode-button-background)] text-[var(--vscode-button-foreground)] rounded-md hover:bg-[var(--vscode-button-hoverBackground)] transition-colors duration-200 font-semibold"
+              >
+                Sign In with GitHub
+              </FormButton>
+            </div>
+          </Card>
         </div>
       ) : (
-        <div className="flex flex-col px-4 py-4 h-[100vh] bg-[var(--vscode-editor-background)] text-[var(--vscode-foreground)] overflow-y-hidden">
+        <div className="flex flex-col h-[100vh] bg-[var(--vscode-editor-background)] text-[var(--vscode-foreground)] overflow-hidden">
           <Header
             title="What can I help you build today?"
             subtitle="Create new code, add features, or fix issues—let's make it happen."
           />
-          <AnalysisBox
-            thinkingSteps={thinkingSteps}
-            finalAnswer={finalAnswer}
-            error={error}
-            onClear={handleClearAnalysis}
-            isLoading={isLoading}
-          />
-          <InputContainer
-            fileModalOpen={fileModalOpen}
-            selectedFile={selectedFile}
-            input={input}
-            onFileModalToggle={handleFileModalTogl}
-            onInputChange={(e) => setInput(e.target.value)}
-            onSend={sendForAnlyses}
-            searchTerm={searchTerm}
-            onSearch={handleSearch}
-          />
-          <FileModal
-            isOpen={fileModalOpen}
-            onClose={handleFileModalTogl}
-            files={displayedFiles}
-            onSelectFile={handleSelectFile}
-          />
-          <Footer onSignIn={sendForGithubLogin} profile={userProfile} />
+          <div className="flex-1 min-h-0 px-4 py-2">
+            <AnalysisBox
+              thinkingSteps={thinkingSteps}
+              finalAnswer={finalAnswer}
+              error={error}
+              onClear={handleClearAnalysis}
+              isLoading={isLoading}
+            />
+          </div>
+          <div className="px-4 py-2">
+            <InputContainer
+              fileModalOpen={fileModalOpen}
+              selectedFile={selectedFile}
+              input={input}
+              onFileModalToggle={handleFileModalTogl}
+              onInputChange={(e) => setInput(e.target.value)}
+              onSend={sendForAnlyses}
+              searchTerm={searchTerm}
+              onSearch={handleSearch}
+            />
+            <FileModal
+              isOpen={fileModalOpen}
+              onClose={handleFileModalTogl}
+              files={displayedFiles}
+              onSelectFile={handleSelectFile}
+            />
+            <Footer onSignIn={sendForGithubLogin} profile={userProfile} />
+          </div>
         </div>
       )}
     </>

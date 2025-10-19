@@ -20,7 +20,7 @@ const Modal: FunctionComponent<ModalProps> = ({
   return (
     <div
       className={twMerge(
-        "absolute z-50 bg-[var(--vscode-background)] border-[0.3px] border-solid border-[var(--vscode-input-background)] rounded-t-md p-5 shadow-lg overflow-y-hidden",
+        "absolute z-50 bg-[var(--vscode-input-background)] rounded-t-md p-5 shadow-lg overflow-y-hidden",
         className
       )}
     >

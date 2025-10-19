@@ -2,6 +2,36 @@
 
 loom.com/share/752aa7884c304b609b71b37e75e8ab74
 
+## Ollama Model Installation
+
+Install the [Ollama](https://ollama.com/) App in your system
+
+Run this command from your terminal:
+
+```bash
+ollama run qwen2.5-coder
+```
+
+## For running Second time
+
+For Next time run:
+
+```bash
+ollama serve
+```
+
+In another terminal run:
+
+```bash
+ollama run qwen2.5-coder
+```
+
+For stoping the LLM:
+
+```bash
+ollama stop qwen2.5-coder
+```
+
 This is a **simplified recreation of Traycer AI** as a VS Code extension, demonstrating the core "planning layer" concept. CodeSail acts as an intelligent orchestrator for coding agents: it analyzes your codebase, breaks tasks into structured, step-by-step plans, and generates actionable fixes/suggestions. This clone uses Groq AI (via `llama-3.1-8b-instant`) as the underlying agent to mimic this—providing precise planning before code changes, ensuring reliable, auditable outputs.
 
 Built in **TypeScript** with a **React-based webview UI** (styled with Tailwind CSS), it integrates seamlessly into VS Code. No backend required—API keys are stored securely via VS Code's `SecretStorage`.

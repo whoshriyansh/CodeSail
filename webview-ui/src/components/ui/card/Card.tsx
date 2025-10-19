@@ -16,7 +16,7 @@ const Card: FunctionComponent<CardProps> = ({
     <div
       onClick={onClick}
       className={twMerge(
-        "p-4 bg-[var(--vscode-input-background)] flex flex-col gap-6 rounded-xl shadow-sm",
+        "p-4 bg-[var(--vscode-input-background)] flex flex-col gap-3 rounded-xl shadow-sm",
         className
       )}
     >
@@ -34,7 +34,7 @@ const CardHeader: FunctionComponent<CardProps> = ({
     <div
       onClick={onClick}
       className={twMerge(
-        "p-4 border border-solid rounded-md bg-transparent shadow-md hover:shadow-lg transition-shadow duration-200 grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 [.border-b]:pb-6",
+        "p-2 border border-solid rounded-md bg-transparent shadow-md hover:shadow-lg transition-shadow duration-200 grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 px-6 [.border-b]:pb-6",
         className
       )}
     >

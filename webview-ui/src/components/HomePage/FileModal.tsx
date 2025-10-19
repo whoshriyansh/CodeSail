@@ -1,6 +1,5 @@
-import { type FunctionComponent } from "react";
+import React, { type FunctionComponent } from "react";
 import { type FilePath } from "../../types/Homepage";
-
 import { twMerge } from "tailwind-merge";
 import Modal from "../ui/modal/Modal";
 import { ListFiles } from "./ListFiles";
@@ -25,11 +24,11 @@ const FileModal: FunctionComponent<FileModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       className={twMerge(
-        "left-3.5 bottom-32 max-h-[30vh] w-3/4 md:w-2/4 flex flex-col gap-2 z-40",
+        "absolute bottom-28 w-3/4 max-h-[30vh] flex flex-col gap-2 z-50 bg-[var(--vscode-input-background)] text-[var(--vscode-foreground)] rounded-md shadow-lg border border-[var(--vscode-input-border)]",
         className
       )}
     >
-      <ul className="space-y-2">
+      <ul className="space-y-2 p-2 overflow-y-auto">
         {files.length > 0 ? (
           files.map((file, index) => (
             <ListFiles
@@ -40,7 +39,9 @@ const FileModal: FunctionComponent<FileModalProps> = ({
             />
           ))
         ) : (
-          <li>No files found.</li>
+          <li className="p-2 text-[var(--vscode-foreground)] opacity-70">
+            No files found.
+          </li>
         )}
       </ul>
     </Modal>

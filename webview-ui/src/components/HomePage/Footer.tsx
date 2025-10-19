@@ -1,5 +1,5 @@
-import { type FunctionComponent } from "react";
-import { User, LogOut } from "lucide-react";
+import { memo } from "react";
+import { User } from "lucide-react";
 import { twMerge } from "tailwind-merge";
 import { FormButton } from "../ui/formFields/FormFields";
 
@@ -16,12 +16,7 @@ interface FooterProps {
   onSignIn: () => void;
 }
 
-const Footer: FunctionComponent<FooterProps> = ({
-  className,
-  profile,
-  onSignIn,
-}) => {
-  console.log("This is the User Profile in footer", profile);
+const Footer: React.FC<FooterProps> = ({ className, profile, onSignIn }) => {
   return (
     <footer
       className={twMerge(
@@ -42,7 +37,7 @@ const Footer: FunctionComponent<FooterProps> = ({
                   className="w-6 h-6 rounded-full"
                   src={profile.avatar_url}
                 />
-                <div className="text-var(--vscode-input-foreground)">
+                <div className="text-[var(--vscode-input-foreground)]">
                   @{profile.username}
                 </div>
               </div>
@@ -51,21 +46,9 @@ const Footer: FunctionComponent<FooterProps> = ({
             )}
           </FormButton>
         </div>
-
-        {profile && (
-          <div>
-            <FormButton
-              className="flex items-center justify-center gap-2"
-              onClick={() => console.log("Nothing")}
-            >
-              Sign Out
-              <LogOut size={16} />
-            </FormButton>
-          </div>
-        )}
       </div>
     </footer>
   );
 };
 
-export default Footer;
+export default memo(Footer);
