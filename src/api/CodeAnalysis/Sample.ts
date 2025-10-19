@@ -1,7 +1,7 @@
 import ollama from "ollama";
 
-export async function streamDeepSeekAnalysis(code: string, prompt: string) {
-  const SYSTEM_PROMPT = `You are an expert software engineer integrated into a VS Code extension for code analysis and generation. Think Step by Step
+export async function streamDeepSeekAnalysis() {
+  const SYSTEM_PROMPT = `You are an expert software engineer integrated into a VS Code extension for code analysis and generation. THINK STEP BY STEP
 
 Your role is to assist users by analyzing a provided code file, performing tasks such as bug fixing, code analysis, or implementing new features, and returning structured, actionable results. Follow these guidelines:
 - Analyze the provided codebase and user task carefully.
@@ -17,15 +17,56 @@ Your role is to assist users by analyzing a provided code file, performing tasks
   const USER_PROMPT = `
 # Existing Codebase
 <codebase>
-${code}
+"import * as vscode from "vscode";
+import * as fs from "fs/promises";
+import { createViewProvider } from "./webview/ViewProvider";
+
+export async function listAllWorkspaceFiles() {
+  const excludePatterns = "**/{node_modules,dist,build,.git,.*}/**";
+  try {
+	const allFiles = await vscode.workspace.findFiles("**/*", excludePatterns);
+	if (allFiles.length > 0) {
+	  vscode.window.showInformationMessage(
+
+	  );
+	  return allFiles;
+	} else {
+	  vscode.window.showInformationMessage(
+		"No important files found in the workspace."
+	  );
+	  return [];
+	}
+  } catch (error: any) {
+	vscode.window.showErrorMessage("Error listing files"");
+	return [];
+  }
+}
+
+export async function readFileContent(filePath: string) {
+  try {
+	const content = await fs.readFile(filePath, "utf8");
+	vscode.window.showInformationMessage("File content read successfully");
+	return content;
+  } catch (error: any) {
+	const errorMsg = "Error reading file";
+	vscode.window.showErrorMessage(errorMsg);
+	throw new Error(errorMsg);
+  }
+}
+
+export function activate(context: vscode.ExtensionContext) {
+  const provider = createViewProvider(context.extensionUri, context);
+  context.subscriptions.push(
+	vscode.window.registerWebviewViewProvider(provider.viewId, provider)
+  );
+}
+
+export function deactivate() {}"
 </codebase>
 
 # Task
 <task_details>
-${
-  prompt ||
-  "No details provided. Analyze the code for common issues or suggest improvements."
-}
+Analyse the code and give improvements
 </task_details>
 
 # Response Instructions
@@ -72,58 +113,16 @@ If the task is unclear, include a top-level **clarification** field in the JSON 
 
 Now, based on the provided codebase and task, generate the implementation in the specified JSON format.`;
 
-  try {
-    const response = await ollama.chat({
-      model: "qwen2.5-coder",
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: USER_PROMPT },
-      ],
-      stream: false,
-    });
-
-    console.log("Ollama raw response:", JSON.stringify(response, null, 2));
-
-    // Extract JSON from markdown code block
-    const content = response.message.content;
-    const jsonMatch = content.match(/```json\n([\s\S]*?)\n```/);
-
-    if (!jsonMatch || !jsonMatch[1]) {
-      console.error("Invalid or missing JSON code block in response:", content);
-      throw new Error("Response does not contain a valid JSON code block");
-    }
-
-    // Clean and parse the JSON content
-    const jsonContent = jsonMatch[1].trim();
-    let parsedResponse;
-    try {
-      parsedResponse = JSON.parse(jsonContent);
-    } catch (parseError) {
-      console.error("Failed to parse JSON content:", jsonContent);
-      console.error("Parse error details:", parseError);
-      throw new Error(
-        `Invalid JSON format in response: ${
-          parseError instanceof Error ? parseError.message : String(parseError)
-        }`
-      );
-    }
-
-    // Validate the parsed response structure
-    if (
-      !parsedResponse.task_name ||
-      !parsedResponse.thinking_steps ||
-      !parsedResponse.pr_title ||
-      !parsedResponse.pr_description ||
-      !parsedResponse.file_changes
-    ) {
-      console.error("Parsed response missing required fields:", parsedResponse);
-      throw new Error("Parsed response is missing required fields");
-    }
-
-    return parsedResponse;
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : String(error);
-    console.error("Ollama API error:", message, error);
-    throw new Error(`Analysis failed: ${message}`);
-  }
+  console.log("Starting streamDeepSeekAnalysis with prompt:");
+  const stream = await ollama.chat({
+    model: "qwen2.5-coder",
+    messages: [
+      { role: "system", content: SYSTEM_PROMPT },
+      { role: "user", content: USER_PROMPT },
+    ],
+    stream: false,
+  });
+  console.log("These are response", stream);
 }
+
+streamDeepSeekAnalysis();
